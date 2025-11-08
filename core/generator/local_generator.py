@@ -43,3 +43,4 @@ class LocalGenerator(BaseModelGenerator):
     
         
         
+#  cgabfe prompt style to instruct

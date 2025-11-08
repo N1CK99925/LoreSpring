@@ -1,17 +1,17 @@
-from core.generator import LocalGenerator, OpenAIGenerator
+from core.generator import LocalGenerator, CloudGenerator
 
 def select_generator(choice):
     if choice == 1:
         return LocalGenerator()
     elif choice == 2:
-        return OpenAIGenerator()
+        return CloudGenerator()
     else:
         raise ValueError("Invalid generator selection")
 
 def select():
     print("Choose a generator:")
     print("1. Local model")
-    print("2. OpenAI API")
+    print("2. Cloud model")
 
     try:
         choice = int(input("Enter choice (1/2): "))
