@@ -20,45 +20,69 @@ class CloudGenerator(BaseModelGenerator):
         self.client = genai.Client()  
         self.model_name = model_name
         
-    def generate(self, prompt: str, max_tokens=1024, temperature=0.9, top_p=0.95):
-        """
-        Generate text using Gemini API
-        
-        Args:
-            prompt: Input text prompt
-            max_tokens: Maximum number of tokens to generate
-            temperature: Sampling temperature (0.0-2.0)
-            top_p: Nucleus sampling parameter
-            
-        Returns:
-            Generated text as string
-        """
+    def generate(self, prompt: str, max_tokens=8192, temperature=0.9, top_p=0.95, enhance_for_length=True):
         try:
+            # Optionally enhance prompt to encourage longer, detailed output
+            if enhance_for_length:
+                enhanced_prompt = f"""{prompt}
+
+=== WEBNOVEL CHAPTER INSTRUCTIONS ===
+
+Write a complete 1000-1500-word chapter following these rules:
+
+STYLE (RoyalRoad/WuxiaWorld standard):
+- Short paragraphs (2-4 sentences) for mobile reading
+- Fast-paced, engaging narrative flow
+- Close third-person or first-person POV
+- Show emotions through actions, not exposition
+
+MUST INCLUDE:
+- Strong opening hook
+- Frequent internal monologue revealing character thoughts
+- 40-50% dialogue mixed with action beats
+- Sensory details that immerse the reader
+- Chapter-ending hook or cliffhanger
+
+AVOID:
+- Purple prose or overly literary language
+- Info-dumping or wall-of-text exposition
+- Rushing through important scenes
+- Summarizing instead of showing
+
+Write the FULL chapter now - expand scenes completely, don't compress."""
+            else:
+                enhanced_prompt = prompt
+
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=prompt,
+                contents=enhanced_prompt,
                 config=types.GenerateContentConfig(
                     temperature=temperature,
-                    max_output_tokens=max_tokens,
+                    max_output_tokens=max_tokens,  
                     top_p=top_p,
                     top_k=40, 
                 )
             )
+            
             if hasattr(response, "candidates") and response.candidates:
                 candidate = response.candidates[0]
                 if getattr(candidate, "content", None) and getattr(candidate.content, "parts", None):
-                 parts = candidate.content.parts
-                return "".join(
-                    [getattr(part, "text", "") for part in parts if getattr(part, "text", None)]
-                )
+                    parts = candidate.content.parts
+                    generated_text = "".join(
+                        [getattr(part, "text", "") for part in parts if getattr(part, "text", None)]
+                    )
+                    
+                
+                    word_count = len(generated_text.split())
+                    print(f"Generated {word_count} words")
+                    
+                    return generated_text
 
-        # If response failed or empty, print debug info
+           
             print("No valid text in response. Raw response:")
             print(response)
             return "(No valid text returned. Possibly filtered or truncated by Gemini.)"
 
         except Exception as e:
-         print(f"Error generating content: {e}")
-        return ""
-        
-        
+            print(f"Error generating content: {e}")
+            return ""
