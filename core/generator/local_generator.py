@@ -11,7 +11,7 @@ MODELS = {
     "phi3": "microsoft/phi-3-mini-3.8b-instruct",
 }
 
-max_tokens = 1000
+max_tokens = 2000
 temprature = 0.7
 top_p = 0.9
 
@@ -24,7 +24,7 @@ class LocalGenerator(BaseModelGenerator):
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            dtype=torch.float16 if device == "cuda" else torch.float32,
             device_map="auto" if device == "cuda" else None,
         ).to(device)
         self.device = device
@@ -38,9 +38,9 @@ class LocalGenerator(BaseModelGenerator):
 
 === WEBNOVEL CHAPTER INSTRUCTIONS ===
 
-Write a complete 1000-1500-word chapter following these rules:
+Write a complete 1000-word chapter following these rules:
 
-STYLE (RoyalRoad/WuxiaWorld standard):
+STYLE (RoyalRoad/WuxiaWorld/Webnovel standard):
 - Short paragraphs (2-4 sentences) for mobile reading
 - Fast-paced, engaging narrative flow
 - Close third-person or first-person POV
@@ -82,7 +82,8 @@ Write the FULL chapter now - expand scenes completely, don't compress."""
             
             # Remove the prompt from output (some models include it)
             if generated_text.startswith(formatted_prompt):
-                generated_text = generated_text[len(formatted_prompt):].strip()
+                generated_tokens = output[0][len(inputs['input_ids'][0]):]  # Only new tokens
+                generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
             
             word_count = len(generated_text.split())
             print(f"Generated {word_count} words")

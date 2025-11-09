@@ -30,7 +30,7 @@ class CloudGenerator(BaseModelGenerator):
 
 Write a complete 1000-1500-word chapter following these rules:
 
-STYLE (RoyalRoad/WuxiaWorld standard):
+STYLE (RoyalRoad/WuxiaWorld/Webnovel standard):
 - Short paragraphs (2-4 sentences) for mobile reading
 - Fast-paced, engaging narrative flow
 - Close third-person or first-person POV
