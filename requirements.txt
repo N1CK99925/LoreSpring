@@ -1,4 +1,0 @@
-transformers
-torch
-google-genai
-dotenv
