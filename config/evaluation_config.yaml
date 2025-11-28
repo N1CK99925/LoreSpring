@@ -1,0 +1,18 @@
+metrics:
+  consistency_score_weight: 0.5
+  timeline_score_weight: 0.2
+  lore_score_weight: 0.2
+  style_score_weight: 0.1
+
+consistency_thresholds:
+  chapter_pass: 85
+  error_types:
+    timeline: 5        # max allowed
+    lore_conflict: 3
+    ability_error: 2
+    relationship_error: 2
+
+evolution:
+  min_required_improvement: 0.15   # 15% improvement needed
+  test_sample_size: 5              # number of chapters used for A/B testing
+  rollback_allowed: true

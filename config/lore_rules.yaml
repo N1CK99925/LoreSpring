@@ -1,0 +1,35 @@
+
+
+world:
+  genre: "general_fantasy"    # change for sci-fi, mystery, romance, etc.
+  allow_magic: true
+  power_system: "custom"
+
+constraints:
+  physical_limits:
+    - "Characters cannot be in two places at the same time."
+    - "Events must follow chronological order unless explicitly flashback."
+    - "Major injuries should persist and affect later scenes."
+
+  identity_rules:
+    - "A character cannot change name without narrative justification."
+    - "Deaths must be consistent unless resurrection is allowed by world rules."
+
+  ability_rules:
+    allow_abilities: true
+    rules:
+      - "Abilities must have consistent limitations."
+      - "If an ability is learned, it must be reflected in the graph memory."
+      - "No character may use abilities they haven't acquired."
+
+timeline_rules:
+  enforce_sequential_chapters: true
+  allow_flashbacks: true
+  flashback_requirements:
+    - "Flashbacks must be labeled clearly."
+    - "Flashbacks cannot contradict known history."
+
+relationships:
+  consistency_requirements:
+    - "Relationships must evolve logically."
+    - "Conflicts must persist unless resolved."

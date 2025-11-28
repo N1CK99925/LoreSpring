@@ -1,0 +1,41 @@
+vector_memory:
+  enabled: true
+  provider: "chroma"       # chroma | faiss
+  embedding_model: "text-embedding-3-small"
+  chunk_size: 512
+  chunk_overlap: 64
+  retrieval_top_k: 10
+
+graph_memory:
+  enabled: true
+  provider: "neo4j"        # neo4j | networkx
+  host: "bolt://localhost:7687"
+  database: "lore"
+  node_types:
+    - character
+    - location
+    - item
+    - faction
+    - event
+    - ability
+  relationship_types:
+    - interacts_with
+    - belongs_to
+    - fought
+    - traveled_to
+    - learned
+    - injured_by
+    - stronger_than
+
+temporal_memory:
+  enabled: true
+  track_story_time: true
+  track_chapter_time: true
+  enforce_chronology: true
+
+retrieval:
+  filter_by_entities: true
+  filter_by_chapter_range: true
+  include_timeline: true
+  include_graph_neighbors: true
+  graph_hop_limit: 2

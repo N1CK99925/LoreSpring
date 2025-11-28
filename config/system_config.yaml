@@ -1,0 +1,21 @@
+system:
+  name: "LoreSpring"
+  version: "0.1.0"
+
+runtime:
+  mode: "development"     # development | production | testing
+  mock_llm: false        # true = use mock LLM for testing
+  autosave_interval: 1   # save story state every chapter
+
+paths:
+  vector_store: "./data/memory/vector_store/"
+  graph_store: "./data/memory/graph/"
+  temporal_store: "./data/memory/temporal/"
+  story_state: "./data/memory/story_state.json"
+  logs: "./data/outputs/logs/"
+  chapters_output: "./data/outputs/chapters/"
+  evaluation_output: "./data/outputs/evaluations/"
+
+providers:
+  embedder: "gemeni"     # sentence-transformers
+  llm_provider: "gemeni" 
