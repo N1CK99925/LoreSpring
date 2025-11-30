@@ -1,6 +1,5 @@
-# utils/file_io.py
 import yaml
-import json
+
 from pathlib import Path
 from typing import Any, Dict
 
@@ -14,11 +13,11 @@ def load_yaml_config(file_name: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing the configuration
     """
-    # Get the current file's directory (utils/)
+  
     current_dir = Path(__file__).parent
     
-    # Navigate to project root, then to config directory
-    # utils -> src -> LORESPIRING -> config
+   
+    # utils -> src -> main folder -> config
     config_path = current_dir.parent.parent / 'config' / file_name
     
     try:

@@ -1,20 +1,31 @@
 import logging
 from pathlib import Path
 
-
 LOG_DIR = Path("data/output/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE = LOG_DIR / "run.log"
 
-logging.basicConfig(
-    level=logging.INFO,                     
-    filename=str(LOG_FILE),                
-    filemode="a",                          
-    format="[{asctime}] {levelname} - {message}",
+logger = logging.getLogger("StorySystem")
+logger.setLevel(logging.INFO)
+
+
+file_handler = logging.FileHandler(LOG_FILE)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter(
+    "[{asctime}] {levelname} - {message}",
     style="{",
     datefmt="%Y-%m-%d %H:%M:%S"
-)
+))
 
-# Create logger object
-logger = logging.getLogger("StorySystem")
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(
+    "[{asctime}] {levelname} - {message}",
+    style="{",
+    datefmt="%H:%M:%S"
+))
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
