@@ -6,6 +6,7 @@ from utils.file_io import load_yaml_config
 from typing import Optional
 import google.generativeai as genai
 import os
+import json
 
 
 from utils.logger import logger
@@ -39,7 +40,7 @@ class LLMClient:
         
         
         
-    def generate(self, user_prompt: str ,system_prompt: Optional[str] = None) -> Optional[str]:
+    def generate(self, user_prompt: str ,system_prompt: Optional[str] = None, json_mode : bool = False) -> Optional[str]:
         """
         This is the unified file that will the agents will use to interact with the LLM
         
@@ -47,7 +48,14 @@ class LLMClient:
         systen prompt = agent rules and identity
         """
         messages = []
+        
+        
         try:
+            if json_mode:
+                user_prompt = user_prompt + "\n Please respond in valid JSON format. No explanations,"
+                
+                
+                
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
 
@@ -59,9 +67,19 @@ class LLMClient:
                 max_output_tokens =  self.max_tokens,
                 
                 
+                
             )
+            text = response.text
+        
+            if json_mode:
+                try:
+                    return json.loads(response.text)
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON decoding error: {e}")
+                    return None
+                
             logger.info("Text generation successful")
-            return response.text
+            return text
 
         except Exception as e:
             logger.error(f"Error generating text: {e}")
