@@ -2,11 +2,6 @@ system:
   name: "LoreSpring"
   version: "0.1.0"
 
-runtime:
-  mode: "development"     # development | production | testing
-  mock_llm: false        # true = use mock LLM for testing
-  autosave_interval: 1   # save story state every chapter
-
 paths:
   vector_store: "./data/memory/vector_store/"
   graph_store: "./data/memory/graph/"
@@ -16,6 +11,14 @@ paths:
   chapters_output: "./data/outputs/chapters/"
   evaluation_output: "./data/outputs/evaluations/"
 
-providers:
-  embedder: "gemeni"     # sentence-transformers
-  llm_provider: "gemeni" 
+
+llm:
+  provider: "gemini"
+  model: "gemini-pro"        # change to the exact model name you want
+  temperature: 0.7
+  max_tokens: 2048
+  # place to add provider-specific settings if needed
+pipeline:
+  - planner_agent
+  - narrative_agent
+
