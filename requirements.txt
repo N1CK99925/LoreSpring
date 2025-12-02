@@ -6,10 +6,9 @@ groq>=0.4.0
 sentence-transformers>=2.3.1
 numpy>=1.26.4
 
-# --- YAML Config Loading ---
+
 pyyaml>=6.0.1
 
-# --- Vector Storage (Chroma for Phase 2) ---
 chromadb>=0.5.3
 
 # --- Optional: Local database for Chroma ---
@@ -20,9 +19,6 @@ networkx>=3.2.1
 
 # --- Environment Variables ---
 python-dotenv>=1.0.1
-
-# --- Logging Utilities ---
-loguru>=0.7.2
 
 # --- Utility Libraries ---
 tqdm>=4.66.2

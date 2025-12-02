@@ -1,5 +1,4 @@
 from google import generativeai
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from utils.file_io import load_yaml_config
 from typing import List, Optional
 import os
@@ -13,6 +12,7 @@ class Embeddings:
         embedding_config = self.config['embeddings']
         self.provider = embedding_config['provider']
         self.model = embedding_config['model']
+        self.dim = 768
         
         if self.provider.lower() == 'gemini':
             api_key = os.getenv("GOOGLE_API_KEY")

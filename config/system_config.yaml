@@ -14,10 +14,10 @@ paths:
 
 llm:
   provider: "gemini"
-  model: "gemini-pro"        # change to the exact model name you want
+  model: "gemini-pro"      
   temperature: 0.7
   max_tokens: 2048
-  # place to add provider-specific settings if needed
+
 pipeline:
   - planner_agent
   - narrative_agent
