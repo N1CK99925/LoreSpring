@@ -22,3 +22,6 @@ pipeline:
   - planner_agent
   - narrative_agent
 
+embeddinngs:
+  provider: "gemini"
+  model: "gemeni-embedding-001"
