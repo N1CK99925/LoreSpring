@@ -8,8 +8,7 @@ vector_memory:
 
 graph_memory:
   enabled: true
-  provider: "neo4j"        # neo4j | networkx
-  host: "bolt://localhost:7687"
+  provider: "networkx"        # neo4j | networkx
   database: "lore"
   node_types:
     - character

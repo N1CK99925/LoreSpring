@@ -3,6 +3,7 @@ from utils.file_io import load_yaml_config
 from typing import List, Optional
 import os
 from dotenv import load_dotenv
+from utils.logger import logger
 
 load_dotenv('.env')
 
@@ -12,7 +13,6 @@ class Embeddings:
         embedding_config = self.config['embeddings']
         self.provider = embedding_config['provider']
         self.model = embedding_config['model']
-        self.dim = 768
         
         if self.provider.lower() == 'gemini':
             api_key = os.getenv("GOOGLE_API_KEY")
@@ -20,7 +20,9 @@ class Embeddings:
                 raise ValueError("Google API key not found in .env file")
             generativeai.configure(api_key=api_key)
             self.client = generativeai.EmbeddingModel(self.model)
+            logger.info(f"Initialized Gemini Embeddings with model {self.model}")
         else:
+            logger.error(f"Unsupported Embedding provider: {self.provider}")
             raise ValueError(f"Unsupported Embedding provider: {self.provider}")
         
     def embed(self, text: str) -> List[float]:
@@ -34,9 +36,10 @@ class Embeddings:
         return response.embeddings
     def embed_batch(self, chunks: List[str]) -> List[List[float]]:
         """
-        Embed  a list of chunks
+        Embed a list of chunks
         """
         return [self.embed(chunk) for chunk in chunks]
+    
     
     
         

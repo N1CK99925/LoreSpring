@@ -3,7 +3,7 @@ from utils.file_io import load_yaml_config
 from src.models.embeddings import Embeddings
 from utils.logger import logger
 from typing import Optional, Dict
-import uuid
+# import uuid
 class VectorStore:
     def __init__ (self, config_file: str = "../config/memory_config.yaml"):
         self.config = load_yaml_config(config_file)
@@ -60,6 +60,8 @@ class VectorStore:
                 results['distances'][0]
             )
         ]
-    
-
+        
+        
+        
+        
         
