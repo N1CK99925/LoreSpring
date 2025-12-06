@@ -4,6 +4,7 @@ from typing import List, Optional
 import os
 from dotenv import load_dotenv
 from utils.logger import logger
+from sentence_transformers import SentenceTransformer  
 
 load_dotenv('.env')
 
@@ -14,6 +15,8 @@ class Embeddings:
         self.provider = embedding_config['provider']
         self.model = embedding_config['model']
         
+        
+        
         if self.provider.lower() == 'gemini':
             api_key = os.getenv("GOOGLE_API_KEY")
             if not api_key:
@@ -21,6 +24,11 @@ class Embeddings:
             generativeai.configure(api_key=api_key)
             self.client = generativeai.EmbeddingModel(self.model)
             logger.info(f"Initialized Gemini Embeddings with model {self.model}")
+        
+        elif self.provider.lower() == 'sentence_transformers':
+            self.client = SentenceTransformer(self.model)
+            logger.info(f"Initialized SentenceTransformers Embeddings with model {self.model}")
+            
         else:
             logger.error(f"Unsupported Embedding provider: {self.provider}")
             raise ValueError(f"Unsupported Embedding provider: {self.provider}")
@@ -42,4 +50,4 @@ class Embeddings:
     
     
     
-        
+        # TODO: need to add a sentence transfoermeer embeddinf

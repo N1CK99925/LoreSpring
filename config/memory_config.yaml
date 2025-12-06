@@ -1,7 +1,7 @@
 vector_memory:
   enabled: true
   provider: "chroma"       # chroma | faiss
-  embedding_model: "text-embedding-3-small"
+  # embedding_model: "text-embedding-3-small"
   chunk_size: 512
   chunk_overlap: 64
   retrieval_top_k: 10
