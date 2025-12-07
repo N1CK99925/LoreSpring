@@ -3,12 +3,17 @@ from typing import List, Optional
 from utils.logger import logger
 
 class Chunker:
-    def __init__ (self, chunk_size: int = 800, chunk_overlap: int = 200, separators: Optional[List[str]] = None):
+    def __init__ (self, chunk_size: int = 800, chunk_overlap: int = 100, separators: Optional[List[str]] = None):
+        """
+        This class creates chunks from text into smaller bits ussing RecursiveCharacterTextSplitter
+        
+        
+        """
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size = chunk_size,
             chunk_overlap = chunk_overlap,
-            separators = separators if separators else ['\n\n', '\n', ' ', '']
-            
+            separators = separators if separators else ['\n\n', '\n', ' ']
+        
             
         )
     
@@ -16,7 +21,7 @@ class Chunker:
         """
         Split the text into chunks
         """
-        if not text in isinstance(text, str):
+        if not isinstance(text, str):
             logger.error("Input text must be a string")
             raise ValueError("Input text must be a string")
         
@@ -28,8 +33,10 @@ class Chunker:
         """
         all_chunks = []
         for doc in documents:
+            
             chunks = self.chunk_text(doc)
             all_chunks.extend(chunks)
+        
         
         return all_chunks
     
