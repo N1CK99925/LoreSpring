@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from utils.logger import logger
-from utils.file_io import load_prompt_file 
+from utils.file_io import load_prompt_file , load_yaml_config
 
 class BaseAgent(ABC):
     def __init__(self, agent_name: str, llm, memory, config: dict):
