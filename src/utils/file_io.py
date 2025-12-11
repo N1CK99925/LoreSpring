@@ -31,4 +31,17 @@ def load_yaml_config(file_name: str) -> Dict[str, Any]:
         return {}
 
 
+def load_prompt_file(file_name: str) -> Dict[str,Any]:
+    current_dir = Path(__file__).parent
     
+    
+    prompt_path = current_dir.parent / 'prompts_library' / file_name
+        
+    try:
+        with open(prompt_path,'r',encoding='utf-8') as file:
+            content = file.read()
+            return content
+    except IOError as e:
+        print(f"Error reading prompt file {file_name}: {e}")
+        return ""
+            
