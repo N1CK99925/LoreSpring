@@ -62,13 +62,7 @@ class VectorStore:
                     ids=[memory_id],
                 )
         else:
-              
-                self.collection.add(
-                    embeddings=[embedding],
-                    documents=[text],
-                    metadatas=[metadata],
-                    ids=[memory_id],
-                )
+            raise
 
         return memory_id
        

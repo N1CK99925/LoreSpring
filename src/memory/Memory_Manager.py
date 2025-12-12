@@ -1,10 +1,12 @@
 from vector_store import VectorStore
 from utils.file_io import load_yaml_config
 from utils.logger import logger
+from memory.Story_State import StoryState
 class MemoryManager:
     def __init__(self, vector_store= None):
         try:
             self.vector  = VectorStore()
+            self.story_state = StoryState()
         except:
             self.vector = vector_store
             logger.error("Failed to initialize Vector Store in Memory Manager")
