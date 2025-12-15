@@ -61,8 +61,7 @@ class VectorStore:
                     metadatas=[metadata],
                     ids=[memory_id],
                 )
-        else:
-            raise
+        
 
         return memory_id
        

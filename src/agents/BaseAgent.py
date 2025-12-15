@@ -25,10 +25,12 @@ class BaseAgent(ABC):
     def _generate(self, prompt: str, json_mode: bool = False):
         """Unified LLM call wrapper."""
         logger.info(f"Agent {self.agent_name} generating response for prompt.")
+        logger.debug(f"Prompt injected for {self.agent_name} system_prompt")
         return self.llm.generate(
             user_prompt=prompt,
             system_prompt=self.system_prompt,
             json_mode=json_mode
+            
         )
 
     def _retrieve_context(self, query: str, filters=None, n=5):
