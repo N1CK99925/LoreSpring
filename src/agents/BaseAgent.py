@@ -36,7 +36,7 @@ class BaseAgent(ABC):
     def _retrieve_context(self, query: str, filters=None, n=5):
         """Unified memory retrieval helper."""
         logger.info(f"Agent {self.agent_name} retrieving context for query: {query}")
-        return self.memory.retrieve_relevant_context(
+        return self.memory.retrieve_relevant_narrative(
             query=query,
             filters=filters,
             n=n

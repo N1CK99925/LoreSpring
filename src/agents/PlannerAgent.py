@@ -1,5 +1,5 @@
 from src.agents.BaseAgent import BaseAgent
-from utils.file_io import load_yaml_config , load_prompt_file
+from utils.file_io import load_yaml_config 
 from utils.logger import logger
 from src.models.llm_interface import LLMClient
 from memory.Memory_Manager import MemoryManager

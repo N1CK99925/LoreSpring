@@ -7,7 +7,7 @@ import uuid
 class MemoryManager:
     def __init__(self, vector_store=None):
         try:
-            self.vector = VectorStore() or vector_store
+            self.vector = VectorStore()
             self.story_state = StoryState()
             self.chunker = Chunker(chunk_size=800, chunk_overlap=100)
         except Exception as e:
