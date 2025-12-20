@@ -1,9 +1,9 @@
-# src/memory/story_state.py
 import json
 from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
 from utils.logger import logger
+from typing import List
 
 class StoryState:
     """
@@ -48,4 +48,27 @@ class StoryState:
     def mark_chapter_complete(self, chapter_num: int, word_count: int = 0):
         self.state["current_chapter"] = chapter_num
         self.state["total_chapters_written"] += 1
+        self.save()
+        
+    def update_plot_threads(self, threads: List[str]):
+        """Update active plot threads from chapter plan"""
+        self.state["active_plot_threads"] = threads
+        self.save()
+
+    def update_character_state(self, character: str, state_updates: Dict):
+        """Update a character's state"""
+        if character not in self.state["character_states"]:
+            self.state["character_states"][character] = {}
+        self.state["character_states"][character].update(state_updates)
+        self.save()
+
+    def add_recent_event(self, event: str, chapter: int):
+        """Track recent story events"""
+        self.state["recent_events"].append({
+            "event": event,
+            "chapter": chapter,
+            "timestamp": datetime.now().isoformat()
+        })
+        # Keep only last 50 events
+        self.state["recent_events"] = self.state["recent_events"][-50:]
         self.save()

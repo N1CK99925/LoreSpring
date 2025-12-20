@@ -39,7 +39,7 @@ class VectorStore:
             logger.info(f"Initialized Vector Store with provider {self.provider}")
             raise ValueError(f"Unsupported Vector Store provider: {self.provider}")
     
-    def add(self,text : str , metadata : dict , memory_id : str):
+    def add(self,text : str , metadata : dict , memory_id : str = None):
         memory_id = memory_id or str(uuid.uuid4())
         
         embedding = self.embedder.embed(text)
@@ -63,7 +63,7 @@ class VectorStore:
                 )
         
 
-        return memory_id
+        
        
 
         

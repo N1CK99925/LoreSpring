@@ -5,35 +5,35 @@ defaults:
   top_p: 1.0
   presence_penalty: 0.0
   frequency_penalty: 0.0
+agents:
+  planner_agent:
+    model: "gpt-4.1"
+    temperature: 0.4
+    max_tokens: 1000
 
-planner_agent:
-  model: "gpt-4.1"
-  temperature: 0.4
-  max_tokens: 1000
+  narrative_agent:
+    model: "gpt-4.1"
+    temperature: 0.85
+    max_tokens: 2000
 
-narrative_agent:
-  model: "gpt-4.1"
-  temperature: 0.85
-  max_tokens: 2000
+  consistency_agent:
+    model: "gpt-4.1"
+    temperature: 0.0
+    max_tokens: 1500
+    threshold_score: 85   # fail if < 85
 
-consistency_agent:
-  model: "gpt-4.1"
-  temperature: 0.0
-  max_tokens: 1500
-  threshold_score: 85   # fail if < 85
+  lore_keeper_agent:
+    model: "gpt-4.1"
+    temperature: 0.0
+    extraction_format: "json"
 
-lore_keeper_agent:
-  model: "gpt-4.1"
-  temperature: 0.0
-  extraction_format: "json"
+  editor_agent:
+    model: "gpt-4.1"
+    temperature: 0.5
+    max_tokens: 1500
 
-editor_agent:
-  model: "gpt-4.1"
-  temperature: 0.5
-  max_tokens: 1500
-
-evolution_agent:
-  model: "gpt-4.1"
-  temperature: 0.4
-  max_tokens: 2000
-  apply_threshold: 0.15    # improvement needed to apply changes
+  evolution_agent:
+    model: "gpt-4.1"
+    temperature: 0.4
+    max_tokens: 2000
+    apply_threshold: 0.15    # improvement needed to apply changes

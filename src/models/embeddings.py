@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from utils.logger import logger
 from sentence_transformers import SentenceTransformer  
-# TODO: need to add sentence transformer embedding in functions and add tenacity
+# TODO: need to add tenacity
 load_dotenv('.env')
 
 class Embeddings:

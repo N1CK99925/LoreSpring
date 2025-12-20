@@ -137,7 +137,7 @@ Defines the shared structure all agents must follow.
   - `config = agent_config.yaml entry`
 - Requires subclasses to implement:
   ```python
-  async def process_task(self):
+   def process_task(self):
       pass
 
 

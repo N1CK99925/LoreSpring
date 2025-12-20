@@ -40,26 +40,22 @@ class MemoryManager:
         logger.info(f"Stored {len(chunks)} chunks for chapter {chapter_num}")
         return chunk_ids
     
-    def retrieve_relevant_narrative(self, query: str, filters=None, n=5):
+    def retrieve_relevant_narrative(self, query: str, filters=None, n=None):
         """
-        Retrieve relevant context for agent prompts.
-        This is what agents call via _retrieve_context().
+        Retrieve relevant context with proper structure.
+        Returns list of dict with text + metadata.
         """
+       
+        n = n or self.vector.results
+        
         results = self.vector.search(query=query, filter=filters)
         
-        
         if not results:
-            return "No relevant context found."
+            logger.warning("No relevant context found for query")
+            return []
         
-        context_parts = []
-        for result in results[:n]:
-            meta = result.get('metadata', {})
-            text = result.get('text', '')
-            chapter = meta.get('chapter', '?')
-            
-            context_parts.append(f"[Chapter {chapter}]\n{text}")
-        
-        return "\n\n---\n\n".join(context_parts)
+       
+        return results[:n]
     
     def get_state(self):
         """Get current story state dict."""

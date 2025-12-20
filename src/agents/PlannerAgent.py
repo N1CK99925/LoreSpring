@@ -21,15 +21,17 @@ class PlannerAgent(BaseAgent):
         relaed threads and related chractar arc and lore
         and create 
         """
-        story_state  = self.memory.story_state.state
-        chapter_num = self.memory.story_state.get_next_chapter()
+        story_state  = self.memory.get_state()
+        next_chapter = self.memory.story_state.get_next_chapter()
         
         
         recent_chapters = self.memory.retrieve_relevant_narrative(
-            query="recent chapter summary",
-            filters={'type':'chapter'}
+            query=f"chapter {next_chapter - 3} to {next_chapter -1 }",
+            filters={'type':'chapter'},
+            n=3
         )
-    
+
+       
         lore_rules= load_yaml_config("lore_rules.yaml")
         
     
@@ -49,7 +51,7 @@ class PlannerAgent(BaseAgent):
         {recent_chapters}
         
         Next Chapter:
-        {chapter_num}
+        {next_chapter}
                 
         Generate The Chapter Plan
         """
@@ -60,9 +62,9 @@ class PlannerAgent(BaseAgent):
         )
         
         if plan is None:
+            logger.info(f"Planner Agent Failed to plan {plan.get('chapter_number')}")
             raise ValueError('Agent Planner failed to produce a plan')
         
-        logger.info(f"Planner Agent Failed to plan {plan.get('chapter_number')}")
         
         
         return plan
