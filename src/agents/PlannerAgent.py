@@ -1,8 +1,8 @@
 from src.agents.BaseAgent import BaseAgent
-from utils.file_io import load_yaml_config 
-from utils.logger import logger
+from src.utils.file_io import load_yaml_config 
+from src.utils.logger import logger
 from src.models.llm_interface import LLMClient
-from memory.Memory_Manager import MemoryManager
+from src.memory.Memory_Manager import MemoryManager
 class PlannerAgent(BaseAgent):
     def __init__(self):
         config = load_yaml_config("agent_config.yaml")["agents"]["planner_agent"]
@@ -21,13 +21,17 @@ class PlannerAgent(BaseAgent):
         relaed threads and related chractar arc and lore
         and create 
         """
-        story_state  = self.memory.get_state()
-        next_chapter = self.memory.story_state.get_next_chapter()
+        story_state  = self.memory.story_state
+        next_chapter = story_state.get_next_chapter()
         
-        
+        start = max(1, next_chapter - 3)
+        end = next_chapter - 1
+
+        query = f"chapters {start} to {end}"
+
         recent_chapters = self.memory.retrieve_relevant_narrative(
-            query=f"chapter {next_chapter - 3} to {next_chapter -1 }",
-            filters={'type':'chapter'},
+            query=f"{query}",
+            filters={'type':'narrative'},
             n=3
         )
 
@@ -40,10 +44,10 @@ class PlannerAgent(BaseAgent):
         {story_state}
         
         Active plot Threads:
-        {story_state.get("active_plot_threads",[])}
+        {story_state.state.get("active_plot_threads",[])}
         
         Character State:
-        {story_state.get("character_states")}
+        {story_state.state.get("character_states")}
         World Rules:
         {lore_rules}
         
@@ -62,7 +66,7 @@ class PlannerAgent(BaseAgent):
         )
         
         if plan is None:
-            logger.info(f"Planner Agent Failed to plan {plan.get('chapter_number')}")
+            logger.info(f"Planner Agent Failed to plan")
             raise ValueError('Agent Planner failed to produce a plan')
         
         

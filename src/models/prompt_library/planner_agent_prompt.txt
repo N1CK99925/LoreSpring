@@ -48,4 +48,7 @@ THINK THROUGH:
 - Does this maintain pacing?
 - Are character motivations clear?
 
+CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanations.
+Start your response with { and end with }. Nothing else.
+
 Generate the plan.

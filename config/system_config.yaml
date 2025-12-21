@@ -13,20 +13,18 @@ paths:
 
 
 llm:
-  provider: "gemini"
-  model: "gemini-pro"      
+  provider: "groq"
+  model: "llama-3.1-8b-instant"      
   temperature: 0.7
-  max_tokens: 2048
+  max_tokens: 1000
 
-pipeline:
-  - planner_agent
-  - narrative_agent
+
 
 embeddings:
-  provider: "gemini"
-  model: "gemeni-embedding-001"
+  provider: "sentence_transformers"
+  model: "all-MiniLM-L6-v2"
 
 
-mock: true
+mock: false
 
 

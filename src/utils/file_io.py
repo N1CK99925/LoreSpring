@@ -35,7 +35,7 @@ def load_prompt_file(file_name: str) -> Dict[str,Any]:
     current_dir = Path(__file__).parent
     
     
-    prompt_path = current_dir.parent / 'prompts_library' / f"{file_name}_prompt.txt"
+    prompt_path = current_dir.parent /'models'/ 'prompt_library' / f"{file_name}_prompt.txt"
         
     try:
         with open(prompt_path,'r',encoding='utf-8') as file:

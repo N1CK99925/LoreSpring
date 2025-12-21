@@ -27,7 +27,7 @@ class AgentCoordinator:
             return None
         
         self.memory.store_narrative(
-            chapter_num=plan.get('chapter_num'),
+            chapter_num=plan.get('chapter_number'),
             text=draft.get('scene_text'),
             metadata=draft.get('metadata',{})    
         )

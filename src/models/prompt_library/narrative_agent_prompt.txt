@@ -47,4 +47,7 @@ QUALITY CHECKS:
 
 MAKE SURE THAT IT IS IN WEBNOVEL FORMAT
 
+CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanations.
+Start your response with { and end with }. Nothing else.
+
 Write the scene now.

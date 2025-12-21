@@ -1,4 +1,4 @@
-import BaseAgent
+from src.agents.BaseAgent import BaseAgent
 from utils.file_io import load_yaml_config , load_prompt_file
 from utils.logger import logger
 from models.llm_interface import LLMClient

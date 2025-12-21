@@ -15,7 +15,7 @@ class VectorStore:
     
     
     """
-    def __init__ (self, config_file: str = "../config/memory_config.yaml"):
+    def __init__ (self, config_file: str = "memory_config.yaml"):
         self.config = load_yaml_config(config_file)
         vector_store_config = self.config['vector_memory']
         self.provider = vector_store_config['provider']
@@ -31,8 +31,8 @@ class VectorStore:
                 
                 
                 )
-            self.embedder = Embeddings(config_file=self.config.get("system_config_file","../config/system_config.yaml"))
-          
+            self.embedder = Embeddings()
+        #   config_file=self.config.get("system_config_file","/system_config.yaml")
             logger.info("Initialized ChromaDB Vector Store")
             
         else: 

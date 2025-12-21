@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from utils.logger import logger
-from utils.file_io import load_prompt_file , load_yaml_config
+from src.utils.logger import logger
+from src.utils.file_io import load_prompt_file , load_yaml_config
 
 class BaseAgent(ABC):
     def __init__(self, agent_name: str, llm, memory, config: dict):
@@ -12,7 +12,7 @@ class BaseAgent(ABC):
         self.llm = llm
         self.memory = memory
         self.config = config
-        self.system_prompt = load_prompt_file(f"{agent_name}.txt")
+        self.system_prompt = load_prompt_file(f"{agent_name}")
         
 
         logger.info(f"Initialized BaseAgent: {self.agent_name}")
