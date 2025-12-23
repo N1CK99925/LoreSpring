@@ -8,10 +8,10 @@ from src.memory.Memory_Manager import MemoryManager
 class AgentCoordinator:
     
     def __init__(self):
-        self.writer = NarrativeAgent()
-        self.planner = PlannerAgent()
         self.critic = ConsistencyAgent()
         self.memory = MemoryManager()
+        self.planner = PlannerAgent(memory=self.memory)
+        self.writer = NarrativeAgent(memory=self.memory)
         logger.info("Agent Coordinator Initalized")
         
         

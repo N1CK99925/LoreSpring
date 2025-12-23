@@ -2,18 +2,18 @@ from src.agents.BaseAgent import BaseAgent
 from src.utils.file_io import load_yaml_config 
 from src.utils.logger import logger
 from src.models.llm_interface import LLMClient
-from src.memory.Memory_Manager import MemoryManager
+
 class PlannerAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, memory):
         config = load_yaml_config("agent_config.yaml")["agents"]["planner_agent"]
         super().__init__(
             "planner_agent",
             llm = LLMClient(),
-            memory = MemoryManager(),
+            memory = memory,
             config = config
             )
         logger.info(f"Initalized Planner Agent")
-        self.memory : MemoryManager # type hint for vs code
+        
 
     def process_task(self):
         """

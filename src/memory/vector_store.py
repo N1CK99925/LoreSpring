@@ -1,9 +1,10 @@
 import chromadb
-from utils.file_io import load_yaml_config
+from src.utils.file_io import load_yaml_config
 from src.models.embeddings import Embeddings
-from utils.logger import logger
+from src.utils.logger import logger
 from typing import Optional, Dict
 import uuid
+from src.utils.file_io import MEMORY_DIR
 class VectorStore:
     """
     When agent generates new memeory it will be embedded thru embbedings.ppy 
@@ -22,7 +23,8 @@ class VectorStore:
         self.results = vector_store_config.get('n_results',5)
         
         if self.provider.lower() == 'chromadb':
-            self.client = chromadb.PersistentClient(path="../data/vector_db")
+            db_path = MEMORY_DIR / "vector_db"
+            self.client = chromadb.PersistentClient(path=str(db_path))
             self.collection = self.client.get_or_create_collection(
                 name='narrative_memory', 
                 metadata={"hnsw:space":"cosine"},
@@ -33,7 +35,8 @@ class VectorStore:
                 )
             self.embedder = Embeddings()
         #   config_file=self.config.get("system_config_file","/system_config.yaml")
-            logger.info("Initialized ChromaDB Vector Store")
+            logger.info(f"Initialized ChromaDB Vector Store at {db_path}")
+            
             
         else: 
             logger.info(f"Initialized Vector Store with provider {self.provider}")

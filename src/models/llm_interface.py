@@ -1,7 +1,7 @@
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
-from utils.file_io import load_yaml_config
+from src.utils.file_io import load_yaml_config
 from typing import Optional
 from google import genai
 from google.genai import types
@@ -9,7 +9,7 @@ import os
 import json
 import re
 
-from utils.logger import logger
+from src.utils.logger import logger
 logger.info("Logger initialized, The system has started")
 
 load_dotenv('.env')

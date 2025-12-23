@@ -5,7 +5,7 @@ from src.utils.file_io import load_yaml_config
 from src.utils.logger import logger
 
 class ConsistencyAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, memory):
         config = load_yaml_config("agent_config.yaml")["agents"]["consistency_agent"]
         super().__init__(
             "consistency_agent",

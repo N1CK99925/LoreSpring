@@ -4,16 +4,17 @@ from typing import Dict, Any
 from datetime import datetime
 from utils.logger import logger
 from typing import List
-
+from src.utils.file_io import get_memory_path
 class StoryState:
     """
     Dumb Memory to store current story state
     
     
     """
-    def __init__(self, state_file: str = "../data/memory/story_state.json"):
-        self.state_file = Path(state_file)
+    def __init__(self, state_file: str = "story_state.json"):
+        self.state_file = get_memory_path(state_file)
         self.state = self.load()
+        logger.debug(f"init story state path {get_memory_path(state_file)}")
     
     def load(self) -> Dict[str, Any]:
         if self.state_file.exists():

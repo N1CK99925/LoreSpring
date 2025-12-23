@@ -1,6 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, Optional
-from utils.logger import logger
+from src.utils.logger import logger
 
 class Chunker:
     def __init__ (self, chunk_size: int = 800, chunk_overlap: int = 100, separators: Optional[List[str]] = None):

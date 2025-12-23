@@ -45,3 +45,24 @@ def load_prompt_file(file_name: str) -> Dict[str,Any]:
         print(f"Error reading prompt file {file_name}: {e}")
         return ""
             
+            
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+CONFIG_DIR = PROJECT_ROOT / "config"
+MEMORY_DIR = DATA_DIR / "memory"
+
+# Ensure directories exist
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+MEMORY_DIR.mkdir(parents=True, exist_ok=True)
+
+def get_data_path(filename: str) -> Path:
+    """Get path to file in data directory"""
+    return DATA_DIR / filename
+
+def get_config_path(filename: str) -> Path:
+    """Get path to file in config directory"""
+    return CONFIG_DIR / filename
+
+def get_memory_path(filename: str) -> Path:
+    """Get path to file in memory directory"""
+    return MEMORY_DIR / filename

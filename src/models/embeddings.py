@@ -1,9 +1,9 @@
 import google.generativeai as genai
-from utils.file_io import load_yaml_config
+from src.utils.file_io import load_yaml_config
 from typing import List
 import os
 from dotenv import load_dotenv
-from utils.logger import logger
+from src.utils.logger import logger
 from sentence_transformers import SentenceTransformer  
 # TODO: need to add tenacity
 load_dotenv('.env')

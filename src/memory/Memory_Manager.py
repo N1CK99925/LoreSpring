@@ -1,8 +1,9 @@
 from src.memory.vector_store import VectorStore
 from src.memory.Story_State import StoryState
 from src.models.chunking import Chunker
-from utils.logger import logger
-import uuid
+from src.utils.logger import logger
+# import uuid
+import json
 
 class MemoryManager:
     def __init__(self, vector_store=None):
@@ -10,9 +11,26 @@ class MemoryManager:
             self.vector = VectorStore()
             self.story_state = StoryState()
             self.chunker = Chunker(chunk_size=800, chunk_overlap=100)
+            logger.info(f" MemoryManager CREATED — id={id(self)}")
+
         except Exception as e:
             logger.error(f"Failed to initialize Memory Manager: {e}")
             raise
+        
+    def _convert_metadata_to_chromaFriendly(self, metadata: dict ) -> dict:
+        """
+        The metadata generated was in dict/List form so we convert it to chromadb friendly
+        """
+        clean = {}
+        for k , v in metadata.items():
+            if isinstance(v , list):
+                clean[k] = ", ".join(map(str,v))
+            elif isinstance(v, dict):
+                clean[k] = json.dumps(v)
+            else:
+                clean[k] = v
+        return clean        
+        
     
     def store_narrative(self, chapter_num: int, text: str, metadata: dict):
         """
@@ -27,7 +45,7 @@ class MemoryManager:
         chunk_ids = []
         for i, chunk in enumerate(chunks):
             chunk_metadata = {
-                **metadata,
+                **self._convert_metadata_to_chromaFriendly(metadata),
                 "chapter": chapter_num,
                 "chunk_index": i,
                 "total_chunks": len(chunks),
@@ -46,7 +64,7 @@ class MemoryManager:
         Returns list of dict with text + metadata.
         """
        
-        n = n or self.vector.results
+        search_n = n or self.vector.results
         
         results = self.vector.search(query=query, filter=filters)
         
@@ -55,7 +73,7 @@ class MemoryManager:
             return []
         
        
-        return results[:n]
+        return results[:search_n]
     
     def get_state(self):
         """Get current story state dict."""

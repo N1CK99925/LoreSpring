@@ -5,24 +5,24 @@ from src.models.llm_interface import LLMClient
 from src.utils.file_io import load_yaml_config
 from typing import Dict
 class NarrativeAgent(BaseAgent):
-    def __init__ (self):
+    def __init__ (self,memory):
         config = load_yaml_config('agent_config.yaml')['agents']['narrative_agent']
         
         super().__init__(
             "narrative_agent",
             llm=LLMClient(),
-            memory=MemoryManager(),
+            memory=memory,
             config=config
             )
         logger.info("Initialized NarrativeAgent")
-        self.memory : MemoryManager
+        
 
     def process_task(self, plan : Dict):
         """
         Narrative Agnet's Base task
         """
         
-        search_query = f"{plan.get('chapter_title')}" + " ".join(plan.get('plot_threads_advanced',[]))
+        search_query = f"   {plan.get('chapter_title')}  " + "   ".join(plan.get('plot_threads_advanced',[]))
         context = self._retrieve_context(query=search_query,n=5)
         
         user_prompt = f"""
