@@ -52,3 +52,6 @@ class LLM_Interface:
         """
         return self.client.invoke(messages)
         
+    def generate_stream(self,messages):
+        
+        return self.client.stream(messages)
