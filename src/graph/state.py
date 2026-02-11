@@ -11,7 +11,7 @@ class NarrativeState(TypedDict,total= False):
     # --- 2. The Context (RAG & Memory) ---
     # We treat lore as a dictionary to pass JSON directly to the LLM
     lore_context: Dict[str, List[Dict[str, Any]]] 
-    previous_chapter_summary: str
+    previous_chapter_summary: List[Dict[str,Any]]
     
     # --- 3. The Core Artifact (The Writing) ---
     draft: str
@@ -22,6 +22,7 @@ class NarrativeState(TypedDict,total= False):
     # --- 4. Control Flow & Loop Management ---
     revision_count: int
     max_revisions: int  # Configurable limit per chapter
+    should_revise : bool
     
     # --- 5. Review & Quality Signals ---
     # Continuity errors found by the Continuity Agent
@@ -29,10 +30,12 @@ class NarrativeState(TypedDict,total= False):
     # Quality metrics (pacing, prose) from Quality Agent
     quality_metrics: Dict[str, float]
     quality_feedback: str
+    quality_score: float
+    quality_threshold: float
     
     # Lore Extraction
     new_entities: Dict[str, Any] 
     
 
-    final_text: str
+    final_chapter: str
     chapter_summary: str 
