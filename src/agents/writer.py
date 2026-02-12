@@ -46,6 +46,13 @@ def writer_agent_node(state: NarrativeState) -> NarrativeState:
             - Do NOT include bullet points.
             - Do NOT include commentary.
             - Do NOT include anything outside the story.
+            
+            You must preserve established facts from previous chapters.
+            You must not contradict:
+            - character traits
+            - discovered objects
+            - revealed mechanisms
+
 
             """
 
@@ -87,6 +94,8 @@ def writer_agent_node(state: NarrativeState) -> NarrativeState:
             - Do NOT include bullet points.
             - Do NOT include commentary.
             - Do NOT include anything outside the story.
+            
+        
 
         """
         

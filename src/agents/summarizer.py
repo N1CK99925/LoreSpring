@@ -59,14 +59,29 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     ]
 
     response = llm.invoke(messages)
-
     try:
         content = response.content.strip()
+
+        print("RAW SUMMARIZER RESPONSE:\n", content)
+
+        
         if content.startswith("```"):
-            content = content.split("```")[1]
+            content = content.strip("`")
+            content = content.replace("json", "", 1).strip()
+
+        
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        content = content[start:end]
+
         parsed = json.loads(content)
-    except Exception:
+
+    except Exception as e:
+        print("Summarizer JSON parse failed:", e)
+        print(response.content)
         parsed = {}
+ 
+
 
     chapter_summary = parsed.get("chapter_summary", "")
     key_events = parsed.get("key_events", [])
