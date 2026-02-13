@@ -3,6 +3,7 @@ from src.graph.state import NarrativeState
 from src.agents.writer import writer_agent_node
 from src.agents.revision import revision_agent_node
 from src.agents.summarizer import summarizer_agent_node
+from src.agents.continuity import continue_agent_node
 import json 
 from pathlib import Path
 
@@ -34,11 +35,13 @@ def route_after_review(state: NarrativeState):
 workflow = StateGraph(NarrativeState)
 workflow.add_node("writer",writer_agent_node)
 workflow.add_node("reviewer",revision_agent_node)
+workflow.add_node("summarizer",summarizer_agent_node)
+workflow.add_node("continuity",continue_agent_node)
 workflow.set_entry_point("writer")
 workflow.add_edge("writer","reviewer")
-workflow.add_node("summarizer",summarizer_agent_node)
+workflow.add_edge("reviewer","continuity")
+workflow.add_conditional_edges("continuity",route_after_review)
 workflow.add_edge("summarizer",END)
-workflow.add_conditional_edges("reviewer",route_after_review)
 
 
 app = workflow.compile()
@@ -50,7 +53,7 @@ if __name__ == "__main__":
     initial_state = {
         "project_id": "lore-test-123",
         "chapter_number": 2,
-        "user_direction": "Continue the same scene",
+        "user_direction": "Alice's black hair moved in the wind.",
         "metadata": {
             "genre": "fantasy",
             "tone": "dark",
@@ -73,6 +76,7 @@ if __name__ == "__main__":
     
     config = {"configurable": {"thread_id": "test-run-1"}}
     print("run")
+    
     
     # Sync invoke
     result = app.invoke(initial_state, config=config)

@@ -14,6 +14,20 @@ def writer_agent_node(state: NarrativeState) -> NarrativeState:
     draft_current = state.get("draft", "")
     feedback_text = "\n".join(f"- {item}" for item in feedback)
     temp = 0.7 if revision_count == 0 else 0.5
+    continuity_issues = state.get("continuity_issues", [])
+    
+    
+    continuity_text = "\n".join(
+    f"- [{i.get('severity')}] {i.get('description')}"
+    for i in continuity_issues
+    )
+
+
+
+
+
+
+
 
     # TODO: fix when user changes should revise to false
     
@@ -100,6 +114,10 @@ def writer_agent_node(state: NarrativeState) -> NarrativeState:
         """
         
         user = f"""
+        
+        
+        CONTINUITY FEEDBACK:
+        {continuity_text}
         
         EDITORIAL FEEDBACK:
         - {feedback_text}

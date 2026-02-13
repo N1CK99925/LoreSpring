@@ -23,6 +23,11 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     - Do NOT invent new story details.
     - Do NOT evaluate quality.
     - Output ONLY valid JSON.
+    
+    - Extract stable lore facts that must remain consistent later.
+    - Include character traits, appearance, known relationships, locations, and important objects.
+    - Only include facts explicitly present in the chapter.
+
     """
 
     user = f"""
@@ -36,15 +41,20 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     Return ONLY valid JSON in this format:
 
     {{
-        "chapter_summary": "string",
-        "key_events": [
-            "event 1",
-            "event 2"
-        ],
-        "character_updates": {{
-            "CharacterName": "state change description"
-        }}
+    "chapter_summary": "string",
+    "key_events": [
+        "event 1",
+        "event 2"
+    ],
+    "character_updates": {{
+        "CharacterName": "state change description"
+    }},
+    "lore_facts": {{
+        "characters": {{}},
+        "locations": {{}},
+        "objects": {{}}
     }}
+}}
     """
 
     llm = get_llm(
@@ -86,6 +96,7 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     chapter_summary = parsed.get("chapter_summary", "")
     key_events = parsed.get("key_events", [])
     character_updates = parsed.get("character_updates", {})
+    lore_facts = parsed.get('lore_facts',{})
     print("summary node working")
     print("chapter summary ---  ",chapter_summary)
     
@@ -96,7 +107,12 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         "chapter_number": chapter_number,
         "summary": chapter_summary,
         "key_events": key_events,
-        "character_updates": character_updates
+        "character_updates": character_updates,
+        "lore_facts":lore_facts
+        
+        
     })
 
     return state
+
+# TODO merge lore context with lore keeper

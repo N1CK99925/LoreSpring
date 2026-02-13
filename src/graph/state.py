@@ -26,7 +26,8 @@ class NarrativeState(TypedDict,total= False):
     
     # --- 5. Review & Quality Signals ---
     # Continuity errors found by the Continuity Agent
-    continuity_issues: List[Dict[str, str]] 
+    continuity_issues: List[Dict[str, str]]
+    continuity_feedback : str
     # Quality metrics (pacing, prose) from Quality Agent
     quality_metrics: Dict[str, float]
     quality_feedback: str
