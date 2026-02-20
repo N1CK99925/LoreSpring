@@ -1,6 +1,4 @@
+.venv
 .env
-/data/memory/vector_memory
 __pycache__
-/data
-lorespring.egg-info
-data\output\logs\run.log
+
