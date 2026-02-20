@@ -1,7 +1,8 @@
 from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
+from src.schemas.summarizer import SummarizerResult, LoreFacts
+from src.agents.utils import merge_lore
 from langchain_core.messages import HumanMessage, SystemMessage
-import json
 
 
 def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
@@ -18,16 +19,11 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
     Your job:
     - Produce a concise but information-dense summary (150-250 words).
-    - Extract major plot events.
-    - Extract meaningful character state changes.
-    - Do NOT invent new story details.
-    - Do NOT evaluate quality.
-    - Output ONLY valid JSON.
-    
-    - Extract stable lore facts that must remain consistent later.
-    - Include character traits, appearance, known relationships, locations, and important objects.
-    - Only include facts explicitly present in the chapter.
-
+    - Extract the 3-6 most important plot events in order.
+    - Extract meaningful character state changes — only what actually changed.
+    - Extract stable lore facts: character traits, locations, and important objects.
+    - Do NOT invent details not present in the chapter.
+    - Do NOT evaluate prose quality.
     """
 
     user = f"""
@@ -38,68 +34,32 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     {draft}
     --- CHAPTER END ---
 
-    Return ONLY valid JSON in this format:
-
-    {{
-    "chapter_summary": "string",
-    "key_events": [
-        "event 1",
-        "event 2"
-    ],
-    "character_updates": {{
-        "CharacterName": "state change description"
-    }},
-    "lore_facts": {{
-        "characters": {{}},
-        "locations": {{}},
-        "objects": {{}}
-    }}
-}}
+    Summarize the chapter and extract all lore facts explicitly present in the text.
     """
 
-    llm = get_llm(
-        select_model("analysis"),
-        temp=0.2,
-        max_tokens=800
-    )
+    llm = get_llm(select_model("extraction"), temp=0.2, max_tokens=2000)
+    structured_llm = llm.with_structured_output(SummarizerResult)
 
-    messages = [
-        SystemMessage(content=system),
-        HumanMessage(content=user)
-    ]
+    print("summary node working")
 
-    response = llm.invoke(messages)
     try:
-        content = response.content.strip()
-
-        print("RAW SUMMARIZER RESPONSE:\n", content)
-
-        
-        if content.startswith("```"):
-            content = content.strip("`")
-            content = content.replace("json", "", 1).strip()
-
-        
-        start = content.find("{")
-        end = content.rfind("}") + 1
-        content = content[start:end]
-
-        parsed = json.loads(content)
+        result: SummarizerResult = structured_llm.invoke(
+            [SystemMessage(content=system), HumanMessage(content=user)]
+        )
+        chapter_summary = result.chapter_summary
+        key_events = result.key_events
+        character_updates = result.character_updates
+        lore_facts = result.lore_facts.model_dump()
 
     except Exception as e:
-        print("Summarizer JSON parse failed:", e)
-        print(response.content)
-        parsed = {}
- 
+        print(f"Summarizer failed: {e}, using fallback")
+        chapter_summary = f"Chapter {chapter_number} events."
+        key_events = []
+        character_updates = {}
+        lore_facts = LoreFacts().model_dump()  
 
+    print("chapter summary --- ", chapter_summary)
 
-    chapter_summary = parsed.get("chapter_summary", "")
-    key_events = parsed.get("key_events", [])
-    character_updates = parsed.get("character_updates", {})
-    lore_facts = parsed.get('lore_facts',{})
-    print("summary node working")
-    print("chapter summary ---  ",chapter_summary)
-    
     if "previous_chapter_summary" not in state:
         state["previous_chapter_summary"] = []
 
@@ -108,11 +68,10 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         "summary": chapter_summary,
         "key_events": key_events,
         "character_updates": character_updates,
-        "lore_facts":lore_facts
-        
-        
+        "lore_facts": lore_facts
     })
 
-    return state
+    state["lore_context"] = merge_lore(state.get("lore_context", {}), lore_facts)
+    print("lore context:", state.get("lore_context"), {})
 
-# TODO merge lore context with lore keeper
+    return state

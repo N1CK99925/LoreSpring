@@ -1,3 +1,7 @@
+A Multi-Agent Potentially Self Evolving with Lore Aware Memory that focuses on solving Long Term Cohorence Related Issues in Narrative GenAI systems
+
+
+
 lore-spring/
 ├── src/
 │   ├── agents/          # All agent node functions
@@ -35,3 +39,4 @@ lore-spring/
 ├── requirements.txt     # langgraph==0.2.*, etc.
 ├── Dockerfile          # CPU-only deploy
 └── README.md           # Roadmap phases
+

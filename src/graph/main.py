@@ -22,9 +22,17 @@ def load_memory():
 
 
 def route_after_review(state: NarrativeState):
-    if state.get('should_revise'):
-        return 'writer'
-    return 'summarizer'
+    revision_count = state.get("revision_count", 0)
+    max_revisions = state.get("max_revisions", 2)
+
+    
+    if revision_count >= max_revisions:
+        return "summarizer"
+
+    if state.get("should_revise"):
+        return "writer"
+    
+    return "summarizer"
 
 
 
@@ -52,8 +60,14 @@ if __name__ == "__main__":
     
     initial_state = {
         "project_id": "lore-test-123",
-        "chapter_number": 2,
-        "user_direction": "Alice's black hair moved in the wind.",
+        "chapter_number": 1,
+        "user_direction": """
+            A British magical envoy from the Ministry arrives to investigate the kingdom's rapid progress.
+            Rowan must hide the system's existence while showcasing controlled innovation.
+            Introduce one magitech invention that appears purely mechanical but secretly uses mana circuits.
+            The envoy becomes suspicious but lacks proof.
+            End with Rowan realizing the Ministry may annex the kingdom.
+        """,
         "metadata": {
             "genre": "fantasy",
             "tone": "dark",
