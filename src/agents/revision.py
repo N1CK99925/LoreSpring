@@ -80,7 +80,7 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
     state["quality_score"] = avg_score
 
     max_revisions = state.get("max_revisions", 2)
-    threshold = state.get("quality_threshold", 7.5)
+    threshold = state.get("quality_threshold", 6.5)
 
     state["should_revise"] = (
         state.get("should_revise", False) or

@@ -3,11 +3,27 @@
     "chapter_number": 1,
     "summary": "Chapter 1 events.",
     "key_events": [],
-    "character_updates": {},
-    "lore_facts": {
-      "characters": {},
-      "locations": {},
-      "objects": {}
+    "character_updates": {}
+  },
+  {
+    "chapter_number": 2,
+    "summary": "Chapter 2 events.",
+    "key_events": [],
+    "character_updates": {}
+  },
+  {
+    "chapter_number": 3,
+    "summary": "Rowan, a skilled weaver, is visited by Inspector Thompson from the Ministry and Lady Harrington. The inspector is investigating anomalies in the area and is interested in Rowan's talents with fabrics. Rowan uses the system to mask the magical signature of her loom, and the inspector, although suspicious, is unable to detect any magical activity. The visit ends with the inspector stating that he will need to file an inconclusive report and may require further investigation. Rowan is relieved but knows that she must remain vigilant to protect her secrets. The chapter ends with Rowan returning to her loom, ready to continue her work and prepared for the challenges that lie ahead.",
+    "key_events": [
+      "Inspector Thompson and Lady Harrington visit Rowan",
+      "Rowan uses the system to mask the magical signature of her loom",
+      "The inspector attempts to scan the loom but is unable to detect any magical activity",
+      "The inspector states that he will need to file an inconclusive report and may require further investigation",
+      "Rowan is left to wonder what other challenges lay ahead and prepares to continue her work"
+    ],
+    "character_updates": {
+      "Inspector Thompson": "The inspector's character is introduced, showing him to be a sharp and perceptive individual with a dry wit, who is determined to uncover the truth about Rowan's work.",
+      "Rowan": "Rowan's ability to think quickly and use the system to mask the mana signature of her loom is revealed, and her determination to protect her secrets is strengthened."
     }
   }
 ]

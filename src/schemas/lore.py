@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 
 
 class LoreFacts(BaseModel):
-    characters: Dict[str, Any] = Field(
+    characters: Dict[str, str] = Field(
         default_factory=dict,
         description="Character lore keyed by name. Include traits, appearance, relationships, and role. Only facts explicitly in the chapter."
     )
@@ -17,3 +17,5 @@ class LoreFacts(BaseModel):
         description="Important objects keyed by name. Include appearance, powers, and current holder. Only if plot-relevant."
     )
     
+class LoreResult(BaseModel):
+    lore_facts:LoreFacts

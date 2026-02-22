@@ -25,13 +25,15 @@ def route_after_review(state: NarrativeState):
     revision_count = state.get("revision_count", 0)
     max_revisions = state.get("max_revisions", 2)
 
-    
     if revision_count >= max_revisions:
         return "summarizer"
 
-    if state.get("should_revise"):
+    has_critical_continuity = len(state.get("continuity_feedback", [])) > 0
+    below_quality_threshold = state.get("quality_score", 0) < state.get("quality_threshold", 7.5)
+
+    if has_critical_continuity or below_quality_threshold:
         return "writer"
-    
+
     return "summarizer"
 
 
@@ -60,13 +62,13 @@ if __name__ == "__main__":
     
     initial_state = {
         "project_id": "lore-test-123",
-        "chapter_number": 1,
+        "chapter_number": 3,
         "user_direction": """
-            A British magical envoy from the Ministry arrives to investigate the kingdom's rapid progress.
-            Rowan must hide the system's existence while showcasing controlled innovation.
-            Introduce one magitech invention that appears purely mechanical but secretly uses mana circuits.
-            The envoy becomes suspicious but lacks proof.
-            End with Rowan realizing the Ministry may annex the kingdom.
+            Lady Harrington returns with a Ministry inspector.
+            The inspector attempts to magically scan the loom.
+            Rowan must use the system covertly to mask the mana signature in real time.
+            Aldric is mentioned as being away on a supply run.
+            End with the inspector filing an inconclusive report.
         """,
         "metadata": {
             "genre": "fantasy",

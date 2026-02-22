@@ -73,7 +73,7 @@ def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
     state["continuity_issues"] = issues
     state["continuity_feedback"] = critical
-    state["should_revise"] = state.get("should_revise", False) or len(critical) > 0
+    state["should_revise"] =  len(critical) > 0
 
     print("continuity issues:", issues)
     print("force revise:", state["should_revise"])

@@ -19,7 +19,7 @@ def select_model(task: str):
     return {
         "creative_writing": "llama-3.3-70b-versatile",
         "analysis": "moonshotai/kimi-k2-instruct-0905",
-        "extraction": "openai/gpt-oss-20b"
+        "extraction": "llama-3.3-70b-versatile"
     }.get(task, "llama-3.1-70b-versatile")
 
 def invoke_with_retry(llm, messages, max_retries=3):
