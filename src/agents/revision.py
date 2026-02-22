@@ -24,7 +24,7 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
         - Do NOT add new story content.
         - Be concise and critical.
         - Be conservative in scoring (most drafts fall between 5-7).
-        """
+    """
 
     user = f"""
         CHAPTER NUMBER: {chapter_number}
@@ -53,7 +53,7 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
         9-10 = exceptional
 
         Provide exactly 3 feedback bullet points identifying the most critical weaknesses.
-        """
+    """
 
     llm = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
     structured_llm = llm.with_structured_output(RevisionResult)
@@ -62,30 +62,35 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
 
     try:
         result: RevisionResult = structured_llm.invoke(messages)
+        
+       
+        metrics = result.quality_metrics
+        metrics_dict = metrics.model_dump()
+
+        state["quality_metrics"] = metrics_dict
+        state["quality_feedback"] = result.quality_feedback
+        
+        print(state.get('quality_feedback'))
+
+        avg_score = sum(metrics_dict.values()) / len(metrics_dict)
+        state["quality_score"] = avg_score
+
+        max_revisions = state.get("max_revisions", 2)
+        threshold = state.get("quality_threshold", 6.5)
+
+        state["should_revise"] = (
+            state.get("should_revise", False) or
+            (avg_score < threshold and revision_count < max_revisions)
+        )
+
+        print(avg_score)
+        print("revision node working\n")
+
     except Exception as e:
         print(f"Revision agent failed: {e}, using defaults")
         state["quality_metrics"] = {}
         state["quality_feedback"] = []
         state["quality_score"] = 0.0
         state["should_revise"] = True
-        return state
-
-    metrics = result.quality_metrics
-    metrics_dict = metrics.model_dump()
-
-    state["quality_metrics"] = metrics_dict
-    state["quality_feedback"] = result.quality_feedback
-
-    avg_score = sum(metrics_dict.values()) / len(metrics_dict)
-    state["quality_score"] = avg_score
-
-    max_revisions = state.get("max_revisions", 2)
-    threshold = state.get("quality_threshold", 6.5)
-
-    state["should_revise"] = (
-        state.get("should_revise", False) or
-        (avg_score < threshold and revision_count < max_revisions)
-    )
-
-    print("revision node working\n")
+    
     return state
