@@ -1,19 +1,22 @@
-import operator
-from typing import TypedDict, Annotated, List, Dict, Optional, Union, Any
+from src.schemas.lore import LoreResult
+from src.schemas.continuity import ContinuityResult
+from src.schemas.revision import RevisionResult
+from src.schemas.summarizer import SummarizerResult
+from typing import TypedDict,  List, Dict
 
 class NarrativeState(TypedDict,total= False):
     
     project_id: str
     chapter_number: int
     user_direction: str
-    metadata: Dict[str, Any]  
+    metadata: Dict[str,str]  
     
-    lore_context: Dict[str, List[Dict[str, Any]]] 
-    previous_chapter_summary: List[Dict[str,Any]]
-    
+    lore_context: LoreResult 
+    previous_chapter_summary: SummarizerResult
+
     draft: str
 
-    messages: Annotated[List[Any], operator.add]
+    
     
 
     revision_count: int
@@ -21,16 +24,16 @@ class NarrativeState(TypedDict,total= False):
     should_revise : bool
     
     
-    continuity_issues: List[Dict[str, str]]
-    continuity_feedback : str
+    continuity_issues: ContinuityResult
+    continuity_feedback : List[Dict[str,str]]
    
-    quality_metrics: Dict[str, float]
-    quality_feedback: str
+    revision_result: RevisionResult
+    
     quality_score: float
     quality_threshold: float
     
    
-    new_entities: Dict[str, Any] 
+    new_entities: Dict[str, str] 
     
 
     final_chapter: str

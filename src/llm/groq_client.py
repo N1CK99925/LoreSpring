@@ -18,8 +18,8 @@ def get_llm(model: str , temp: float = 0.7, max_tokens : int = 3000):
 def select_model(task: str):
     return {
         "creative_writing": "llama-3.3-70b-versatile",
-        "analysis": "moonshotai/kimi-k2-instruct-0905",
-        "extraction": "llama-3.3-70b-versatile"
+        "analysis": "qwen/qwen3-32b",
+        "extraction": "llama-3.1-8b-instant"
     }.get(task, "llama-3.1-70b-versatile")
 
 def invoke_with_retry(llm, messages, max_retries=3):

@@ -7,6 +7,8 @@ from src.agents.continuity import continue_agent_node
 import json 
 from pathlib import Path
 
+
+# TODO: add another check for quality if it doesnt increase between chapters make llm more strict
 MEMORY_PATH = Path("memory.json")
 
 def load_memory():
@@ -62,14 +64,10 @@ if __name__ == "__main__":
     
     initial_state = {
         "project_id": "lore-test-123",
-        "chapter_number": 3,
+        "chapter_number": 1,
         "user_direction": """
-            Lady Harrington returns with a Ministry inspector.
-            The inspector attempts to magically scan the loom.
-            Rowan must use the system covertly to mask the mana signature in real time.
-            Aldric is mentioned as being away on a supply run.
-            End with the inspector filing an inconclusive report.
-        """,
+           Rowan finishes masking the loom and offers the Inspector a cup of herbal tea to ease the tension. Thompson accepts, but his eyes stay fixed on her hands, looking for the callouses of a mage rather than a weaver. He asks her directly where Aldric is. Rowan must lie convincingly while feeling the physical strain of the mana shield she just held.
+        """.strip(),
         "metadata": {
             "genre": "fantasy",
             "tone": "dark",
@@ -84,7 +82,7 @@ if __name__ == "__main__":
         "quality_metrics": {},
         "new_entities": {},
         "final_chapter": "",
-        "max_revisions": 3,
+        "max_revisions": 2,
         "should_revise": False
 
     }

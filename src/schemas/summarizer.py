@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict
 
 
 
@@ -11,7 +11,7 @@ class SummarizerResult(BaseModel):
     )
     key_events: List[str] = Field(
         description="Ordered list of the 3-6 most important plot events that future chapters must remain consistent with.",
-        min_length=1,
+        
         max_length=6
     )
     character_updates: Dict[str, str] = Field(

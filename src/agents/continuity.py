@@ -2,6 +2,8 @@ from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
 from src.schemas.continuity import ContinuityResult
 from langchain_core.messages import HumanMessage, SystemMessage
+from json_repair import repair_json
+import json
 
 
 def continue_agent_node(state: NarrativeState) -> NarrativeState:
@@ -55,25 +57,82 @@ def continue_agent_node(state: NarrativeState) -> NarrativeState:
     Only flag issues where TWO STATEMENTS directly cannot both be true.
     """
 
-    llm = get_llm(select_model("analysis"), temp=0.1, max_tokens=1200)
-    structured_llm = llm.with_structured_output(ContinuityResult)
+    issues = []
 
-    print("continuity node running")
-
+    
     try:
+        llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
+        structured_llm = llm.with_structured_output(ContinuityResult)
         result: ContinuityResult = structured_llm.invoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
         )
         issues = [i.model_dump() for i in result.continuity_issues]
-    except Exception as e:
-        print(f"Continuity node failed: {e}, defaulting to no issues")
-        issues = []
+        print("continuity node: attempt 1 succeeded")
 
-    critical = [i for i in issues if i.get("severity") == "high"]
+    except Exception as e1:
+        print(f"continuity node attempt 1 failed: {e1}, trying fallback...")
+
+        
+        double_prompt_human = f"""
+        ESTABLISHED STORY MEMORY:
+        {previous_chapter_summary}
+
+        CURRENT LORE CONTEXT:
+        {lore_context}
+
+        CURRENT DRAFT:
+        {draft}
+
+        Step 1: Carefully think through the established memory vs the current draft.
+        For each potential issue ask yourself: can BOTH statements be true simultaneously?
+        - If yes -> NOT a contradiction, skip it.
+        - If no  -> flag it.
+        Consider: character facts, timeline, objects, locations. Ignore prose quality entirely.
+
+        Step 2: Format your findings as a JSON object with exactly this structure:
+        {{
+            "continuity_issues": [
+                {{
+                    "type": "contradiction" | "character" | "timeline" | "object" | "location",
+                    "description": "short string describing the direct conflict between two statements",
+                    "severity": "high" | "medium" | "low"
+                }}
+            ]
+        }}
+
+        RULES:
+        - If no real contradictions exist, return {{"continuity_issues": []}}
+        - Each issue must describe TWO conflicting statements, not just quote the draft
+        - Do NOT flag new information, style choices, or missing details
+        - Return only the JSON object, no extra text
+        """
+
+        try:
+            llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
+            raw_response = llm_raw.invoke(
+                [
+                    SystemMessage(content="You are a JSON-only continuity validation engine. Return only valid JSON."),
+                    HumanMessage(content=double_prompt_human)
+                ]
+            )
+
+            repaired = repair_json(raw_response.content)
+            parsed = json.loads(repaired)
+
+           
+            result = ContinuityResult(**parsed)
+            issues = [i.model_dump() for i in result.continuity_issues]
+            print("continuity node: attempt 2 succeeded")
+
+        except Exception as e2:
+            print(f"continuity node attempt 2 failed: {e2}, defaulting to no issues")
+            issues = []
+
+    critical = [i for i in issues if i.get("severity", "") == "high"]
 
     state["continuity_issues"] = issues
     state["continuity_feedback"] = critical
-    state["should_revise"] =  len(critical) > 0
+    state["should_revise"] = len(critical) > 0
 
     print("continuity issues:", issues)
     print("force revise:", state["should_revise"])
