@@ -1,5 +1,5 @@
 A Multi-Agent Potentially Self Evolving with Lore Aware Memory that focuses on solving Long Term Cohorence Related Issues in Narrative GenAI systems
-
+![alt text](image.png)
 
 
 lore-spring/
