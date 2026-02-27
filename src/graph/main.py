@@ -53,10 +53,8 @@ async def main():
 
     initial_state = {
         "project_id": "lore-test-123",
-        "chapter_number": 1,
-        "user_direction": """
-           Rowan finishes masking the loom and offers the Inspector a cup of herbal tea to ease the tension. Thompson accepts, but his eyes stay fixed on her hands, looking for the callouses of a mage rather than a weaver. He asks her directly where Aldric is. Rowan must lie convincingly while feeling the physical strain of the mana shield she just held.
-        """.strip(),
+        "chapter_number": 3,
+        "user_direction" : "Sera returns to the real dock location alone at night. Someone is already there waiting — not smugglers, but a harbor inspector who reveals Dav is his informant, not the criminal. Sera's altered map may have just gotten someone killed.",
         "metadata": {
             "genre": "fantasy",
             "tone": "dark",

@@ -1,0 +1,1 @@
+# maybe todo will add that you can delete bodes in  between but its hard to do that in vector databases

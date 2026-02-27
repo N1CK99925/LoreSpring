@@ -8,66 +8,72 @@ import json
 
 from langsmith import traceable
 
-@traceable(name="revsion")
+
+@traceable(name="revision")
 async def revision_agent_node(state: NarrativeState) -> NarrativeState:
-    metadata = state.get('metadata', {})
-    genre = metadata.get('genre', 'fantasy')
-    draft_current = state.get('draft')
-    revision_count = state.get('revision_count', 0)
+    metadata = state.get("metadata", {})
+    genre = metadata.get("genre", "fantasy")
+    draft_current = state.get("draft")
+    revision_count = state.get("revision_count", 0)
     chapter_number = state.get("chapter_number")
-    user_direction = state.get('user_direction', "")
+    user_direction = state.get("user_direction", "")
 
     if not draft_current:
         return state
 
-   
     lore_context = await query_lore(
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
-        mode='hybrid'
+        mode="hybrid"
     )
 
-    system = f"""
-    You are a strict literary editor.
-    Your job:
-    - Evaluate quality numerically.
-    - Identify weaknesses precisely.
-    - Do NOT rewrite the chapter.
-    - Do NOT add new story content.
-    - Be concise and critical.
-    - Be conservative in scoring (most drafts fall between 5-7).
+   
 
-    Consider this lore context while evaluating:
-    {lore_context}
-    """
+    system = """You are a senior literary editor specializing in fiction quality assessment.
 
-    user = f"""
-    CHAPTER NUMBER: {chapter_number}
-    GENRE: {genre}
+        Your sole function is to evaluate the quality of a chapter draft and identify its weaknesses.
 
-    USER DIRECTION:
-    {user_direction}
+        EVALUATION DIMENSIONS (score each 0–10):
+        - pacing: Does the scene move at the right speed? Does it drag or rush?
+        - character_depth: Are characters psychologically complex, or flat and predictable?
+        - prose_clarity: Is the writing clear and precise, or muddled with clichés and redundancy?
+        - tension: Is there genuine dramatic tension? Does it build or fall flat?
+        - prompt_adherence: Does the draft faithfully follow the user direction?
 
-    REVISION COUNT: {revision_count}
+        SCORING GUIDE:
+        0–3  = weak or broken
+        4–6  = average with notable flaws
+        7–8  = strong, minor issues
+        9–10 = exceptional, publish-ready
 
-    --- CHAPTER DRAFT START ---
-    {draft_current}
-    --- CHAPTER DRAFT END ---
+        SCORING RULES:
+        - Be conservative. Most drafts score between 5 and 7.
+        - Score based on what is written, not what could be.
+        - Do not rewrite the chapter.
+        - Do not add new story content.
+        - Do not give general praise — identify specific weaknesses only.
 
-    Evaluate using these dimensions (0-10 scale):
-    - pacing
-    - character_depth
-    - prose_clarity
-    - tension
-    - prompt_adherence
+        FEEDBACK RULES:
+        - Provide exactly 3 feedback items.
+        - Each item must be a separate, concise sentence describing one specific weakness.
+        - Focus on the most critical flaws only."""
 
-    Scoring rules:
-    0-3  = weak / broken
-    4-6  = average / flawed
-    7-8  = strong
-    9-10 = exceptional
+    human = f"""<context>
+        Chapter: {chapter_number}
+        Genre: {genre}
+        Revision count: {revision_count}
 
-    Provide exactly 3 feedback bullet points identifying the most critical weaknesses.
-    """
+        User direction:
+        {user_direction}
+
+        Relevant lore:
+        {lore_context}
+        </context>
+
+        <chapter_draft>
+        {draft_current}
+        </chapter_draft>
+
+        Evaluate the chapter draft against all five dimensions. Apply the scoring guide conservatively. Return your quality_metrics scores and exactly 3 quality_feedback items identifying the most critical weaknesses."""
 
     metrics_dict = {}
     quality_feedback = []
@@ -76,7 +82,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
         llm = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
         structured_llm = llm.with_structured_output(RevisionResult)
         result: RevisionResult = structured_llm.invoke(
-            [SystemMessage(content=system), HumanMessage(content=user)]
+            [SystemMessage(content=system), HumanMessage(content=human)]
         )
 
         metrics_dict = result.quality_metrics.model_dump()
@@ -86,59 +92,107 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     except Exception as e1:
         print(f"revision node attempt 1 failed: {e1}, trying fallback...")
 
-        double_prompt_user = f"""
-        CHAPTER NUMBER: {chapter_number}
-        GENRE: {genre}
+       
 
-        USER DIRECTION:
+        system_fallback = (
+            "You are a JSON-only literary evaluation engine. "
+            "Return only valid JSON. No markdown fences. No explanation. No commentary."
+        )
+
+        fallback_prompt = f"""You are a senior literary editor. Evaluate the chapter draft below across five quality dimensions and return a structured JSON assessment.
+
+        <context>
+        Chapter: {chapter_number}
+        Genre: {genre}
+        Revision count: {revision_count}
+
+        User direction:
         {user_direction}
 
-        REVISION COUNT: {revision_count}
+        Relevant lore:
+        {lore_context}
+        </context>
 
-        --- CHAPTER DRAFT START ---
+        <chapter_draft>
         {draft_current}
-        --- CHAPTER DRAFT END ---
+        </chapter_draft>
 
-        Consider the following lore context while evaluating: {lore_context}
+        <evaluation_criteria>
+        Score each dimension from 0 to 10:
+        - pacing: Does the scene move at the right speed? Does it drag or rush?
+        - character_depth: Are characters psychologically complex, or flat and predictable?
+        - prose_clarity: Is the writing clear and precise, or muddled with clichés and redundancy?
+        - tension: Is there genuine dramatic tension? Does it build?
+        - prompt_adherence: Does the draft faithfully follow the user direction?
 
-        Step 1: Carefully read the draft and think through each quality dimension:
-        - pacing: does the scene move at the right speed? does it drag or rush?
-        - character_depth: are characters psychologically complex or flat?
-        - prose_clarity: is the writing clear or muddled? any clichés or redundancy?
-        - tension: is there genuine dramatic tension? does it build?
-        - prompt_adherence: does the draft follow the user direction faithfully?
+        Scoring guide:
+        0-3  = weak or broken
+        4-6  = average with notable flaws
+        7-8  = strong, minor issues
+        9-10 = exceptional
 
-        Score each 0-10. Be conservative — most drafts score 5-7.
-        Identify the 3 most critical weaknesses as separate short sentences.
+        Be conservative — most drafts score between 5 and 7.
+        </evaluation_criteria>
 
-        Step 2: Format your evaluation as a JSON object with exactly this structure:
+        <output_schema>
         {{
-            "quality_metrics": {{
-                "pacing": <int 0-10>,
-                "character_depth": <int 0-10>,
-                "prose_clarity": <int 0-10>,
-                "tension": <int 0-10>,
-                "prompt_adherence": <int 0-10>
-            }},
-            "quality_feedback": [
-                "first weakness as a short sentence",
-                "second weakness as a short sentence",
-                "third weakness as a short sentence"
-            ]
+        "quality_metrics": {{
+            "pacing": <integer 0-10>,
+            "character_depth": <integer 0-10>,
+            "prose_clarity": <integer 0-10>,
+            "tension": <integer 0-10>,
+            "prompt_adherence": <integer 0-10>
+        }},
+        "quality_feedback": [
+            "First weakness as a single concise sentence.",
+            "Second weakness as a single concise sentence.",
+            "Third weakness as a single concise sentence."
+        ]
+        }}
+        </output_schema>
+
+        <examples>
+        Example 1 — a draft with clear flaws:
+        {{
+        "quality_metrics": {{
+            "pacing": 5,
+            "character_depth": 4,
+            "prose_clarity": 6,
+            "tension": 4,
+            "prompt_adherence": 7
+        }},
+        "quality_feedback": [
+            "The opening scene lingers too long on environmental description before the conflict is introduced.",
+            "The antagonist reacts to events without any visible internal motivation, making them feel like a plot device.",
+            "Tension dissolves after the confrontation scene because consequences are resolved too quickly."
+        ]
         }}
 
-        RULES:
-        - quality_feedback MUST be a list of exactly 3 separate strings, one per item
-        - Do NOT combine all feedback into a single string
-        - Return only the JSON object, no extra text
-        """
+        Example 2 — a stronger draft:
+        {{
+        "quality_metrics": {{
+            "pacing": 7,
+            "character_depth": 8,
+            "prose_clarity": 7,
+            "tension": 6,
+            "prompt_adherence": 8
+        }},
+        "quality_feedback": [
+            "The middle section stalls when two characters recap events the reader already witnessed.",
+            "Prose occasionally slips into passive voice during action beats, reducing urgency.",
+            "The chapter ending resolves the immediate conflict but does not plant a strong enough hook."
+        ]
+        }}
+        </examples>
+
+        Evaluate the chapter. Return only the JSON object. No markdown. No extra text."""
 
         try:
             llm_raw = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
             raw_response = llm_raw.invoke(
                 [
-                    SystemMessage(content="You are a JSON-only literary evaluation engine. Return only valid JSON."),
-                    HumanMessage(content=double_prompt_user)
+                    SystemMessage(content=system_fallback),
+                    HumanMessage(content=fallback_prompt)
                 ]
             )
 

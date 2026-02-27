@@ -19,59 +19,56 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
         for s in previous_chapters_summary
     ]) if previous_chapters_summary else "No prior chapters."
 
-
     continuity_lore = await query_lore(
-        f"""
-        Provide all canonical established facts relevant to:
-        - Characters appearing in this draft
+        """Retrieve all canonical established facts relevant to:
+        - Characters appearing in this draft (traits, status, relationships)
         - Timeline of major events so far
         - Known object states and ownership
         - Location rules or constraints
         - Any previously resolved conflicts
 
-        Return factual memory only. No commentary.
-        """,
+        Return factual memory only. No commentary.""",
         mode="hybrid"
     )
 
-    system = """
-You are a narrative continuity validation engine.
+   
 
-Your task:
-- Compare the CURRENT DRAFT against ESTABLISHED CANONICAL MEMORY.
-- Detect direct factual contradictions only.
-- Detect character inconsistencies.
-- Detect timeline conflicts.
-- Detect object continuity errors.
-- Detect location logic violations.
+    system = """You are a narrative continuity validation engine for long-form fiction.
 
-CRITICAL RULES:
-- Missing detail is NOT a contradiction.
-- New information is allowed unless it directly conflicts.
-- Only flag when BOTH statements cannot be true simultaneously.
-- Do NOT evaluate prose quality.
-- Do NOT suggest rewrites.
+        Your sole function is to detect direct logical contradictions between an established canonical record and a new draft chapter. You do not assess prose quality, suggest edits, or fill in missing details.
 
-Severity:
-HIGH: Impossible timeline / Dead character alive / Object identity change
-MEDIUM: Strong logical conflict
-LOW: Interpretive inconsistency
+        WHAT TO FLAG:
+        - A fact in the draft that cannot simultaneously be true with a canonical fact
+        - A character acting in a way that contradicts their established traits or status (e.g., dead character appearing alive)
+        - A timeline event that is out of sequence or impossible given prior events
+        - An object changing identity, ownership, or state in a way that conflicts with established canon
+        - A location used in a way that violates previously established rules or geography
 
-If no issues found, return empty continuity_issues list.
-"""
+        WHAT NOT TO FLAG:
+        - Missing details or gaps (omission is not contradiction)
+        - New information that does not conflict with existing canon
+        - Interpretive ambiguity where both readings could coexist
 
-    human = f"""
-ESTABLISHED STORY SUMMARY:
-{prev_summary_text}
+        SEVERITY SCALE:
+        - high: Logically impossible (dead character alive, timeline rupture, object identity change)
+        - medium: Strong logical conflict requiring one statement to be false
+        - low: Interpretive inconsistency where coexistence is unlikely but not impossible
 
-CANONICAL LORE:
-{continuity_lore}
+        If no contradictions exist, return an empty continuity_issues list."""
 
-CURRENT DRAFT:
-{draft}
+    human = f"""<established_summary>
+        {prev_summary_text}
+        </established_summary>
 
-Analyze strictly for direct logical contradictions.
-"""
+        <canonical_lore>
+        {continuity_lore}
+        </canonical_lore>
+
+        <current_draft>
+        {draft}
+        </current_draft>
+
+        For each potential issue, ask yourself: "Can BOTH statements be simultaneously true?" If yes, do not flag it. Only flag direct contradictions."""
 
     issues = []
 
@@ -89,44 +86,70 @@ Analyze strictly for direct logical contradictions.
     except Exception as e1:
         print(f"continuity node attempt 1 failed: {e1}, trying fallback...")
 
-        fallback_prompt = f"""
-ESTABLISHED STORY SUMMARY:
-{prev_summary_text}
+      
 
-CANONICAL LORE:
-{continuity_lore}
+        system_fallback = (
+            "You are a JSON-only output machine. "
+            "Return valid JSON. No markdown fences. No explanation. No commentary."
+        )
 
-CURRENT DRAFT:
-{draft}
+        fallback_prompt = f"""You are a narrative continuity validator. Your job is to find direct logical contradictions between the canonical record and a new draft chapter.
 
-Step 1:
-Check each potential issue carefully.
-Ask: Can BOTH statements be true simultaneously?
-If yes → NOT a contradiction.
-If no → Flag it.
+        A contradiction exists ONLY when two statements cannot both be true at the same time.
+        Missing detail is NOT a contradiction. New information is NOT a contradiction.
 
-Step 2:
-Return ONLY this JSON format:
+        <established_summary>
+        {prev_summary_text}
+        </established_summary>
 
-{{
-    "continuity_issues": [
+        <canonical_lore>
+        {continuity_lore}
+        </canonical_lore>
+
+        <current_draft>
+        {draft}
+        </current_draft>
+
+        <output_schema>
         {{
-            "type": "contradiction" | "character" | "timeline" | "object" | "location",
-            "description": "short description of the direct conflict between two statements",
-            "severity": "high" | "medium" | "low"
+        "continuity_issues": [
+            {{
+            "type": "contradiction" or "character" or "timeline" or "object" or "location",
+            "description": "one sentence stating what the canon says vs. what the draft says",
+            "severity": "high" or "medium" or "low"
+            }}
+        ]
         }}
-    ]
-}}
+        </output_schema>
 
-If none exist, return {{"continuity_issues": []}}
-No extra text.
-"""
+        <examples>
+        Example 1 — contradiction found:
+        Canon says Lord Varen died in Chapter 3. Draft shows Lord Varen speaking dialogue in Chapter 7.
+        Output:
+        {{
+        "continuity_issues": [
+            {{
+            "type": "character",
+            "description": "Canon establishes Lord Varen died in Chapter 3, but the draft depicts him speaking in Chapter 7 with no resurrection explanation.",
+            "severity": "high"
+            }}
+        ]
+        }}
+
+        Example 2 — no contradictions:
+        Output:
+        {{
+        "continuity_issues": []
+        }}
+        </examples>
+
+        Now analyze the draft. Return only the JSON object. No markdown. No extra text."""
 
         try:
             llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
             raw_response = llm_raw.invoke(
                 [
-                    SystemMessage(content="Return valid JSON only."),
+                    SystemMessage(content=system_fallback),
                     HumanMessage(content=fallback_prompt)
                 ]
             )
@@ -143,7 +166,6 @@ No extra text.
             print(f"continuity node attempt 2 failed: {e2}, defaulting to no issues")
             issues = []
 
- 
     critical = [i for i in issues if i.get("severity") == "high"]
 
     state["continuity_issues"] = issues

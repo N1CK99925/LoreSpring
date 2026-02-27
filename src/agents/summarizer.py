@@ -6,7 +6,6 @@ from src.memory.lightrag import query_lore
 from json_repair import repair_json
 import json
 
-
 from langsmith import traceable
 
 
@@ -21,46 +20,53 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     if not draft:
         return state
 
-    
     lore_context = await query_lore(
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
-        mode='hybrid'
+        mode="hybrid"
     )
 
-    system = f"""
-    You are a structured narrative summarization engine.
+    system = """You are a structured narrative summarization engine for long-form fiction.
 
-    Your job:
-    - Produce a concise but information-dense summary (150-250 words).
-    - Extract the 3-6 most important plot events in order.
-    - Extract meaningful character state changes — only what actually changed.
-    - Do NOT invent details not present in the chapter.
-    - Do NOT evaluate prose quality.
+        Your sole function is to extract and compress narrative information from a chapter draft.
 
-    Consider this lore context while summarizing:
-    {lore_context}
-    """
+        WHAT TO PRODUCE:
+        - A single concise summary of 150-250 words covering the chapter's narrative arc
+        - A list of 3-6 key plot events in chronological order, each as a short phrase
+        - A map of character state changes — only changes that actually occur in the chapter
 
-    user = f"""
-    CHAPTER NUMBER: {chapter_number}
-    GENRE: {genre}
+        RULES:
+        - Extract only what is present in the chapter. Do not invent or infer details.
+        - Each key event must be a discrete plot beat, not a vague generalization.
+        - Character updates must describe a concrete change: knowledge gained, relationship shifted, status altered, decision made.
+        - Omit characters who do not meaningfully change in this chapter.
+        - Do not evaluate prose quality or suggest improvements."""
 
-    --- CHAPTER START ---
-    {draft}
-    --- CHAPTER END ---
+    human = f"""<context>
+        Chapter: {chapter_number}
+        Genre: {genre}
 
-    Summarize the chapter and extract plot events and character changes.
-    """
+        User direction:
+        {user_direction}
+
+        Relevant lore:
+        {lore_context}
+        </context>
+
+        <chapter_draft>
+        {draft}
+        </chapter_draft>
+
+        Summarize the chapter. Extract key plot events in order and character state changes. Only include what is directly present in the draft."""
 
     chapter_summary = f"Chapter {chapter_number} events."
     key_events = []
     character_updates = {}
 
     try:
-        llm = get_llm(select_model("analysis"), temp=0, max_tokens=1500)
+        llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
         structured_llm = llm.with_structured_output(SummarizerResult)
         result: SummarizerResult = structured_llm.invoke(
-            [SystemMessage(content=system), HumanMessage(content=user)]
+            [SystemMessage(content=system), HumanMessage(content=human)]
         )
         chapter_summary = result.chapter_summary
         key_events = result.key_events
@@ -70,41 +76,92 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     except Exception as e1:
         print(f"summary node attempt 1 failed: {e1}, trying fallback...")
 
-        double_prompt_user = f"""
-        CHAPTER NUMBER: {chapter_number}
-        GENRE: {genre}
+       
 
-        --- CHAPTER START ---
+        system_fallback = (
+            "You are a JSON-only narrative summarization engine. "
+            "Return only valid JSON. No markdown fences. No explanation. No commentary."
+        )
+
+        fallback_prompt = f"""You are a narrative summarization engine for long-form fiction. Extract structured information from the chapter draft below.
+
+        <context>
+        Chapter: {chapter_number}
+        Genre: {genre}
+
+        User direction:
+        {user_direction}
+
+        Relevant lore:
+        {lore_context}
+        </context>
+
+        <chapter_draft>
         {draft}
-        --- CHAPTER END ---
+        </chapter_draft>
 
-        Consider the following lore context while summarizing: {lore_context}
+        <extraction_rules>
+        1. chapter_summary: Write 150–250 words covering the chapter's overall narrative arc. Extract only what is in the chapter — do not invent details.
+        2. key_events: List 3–6 discrete plot beats in chronological order. Each must be a short, specific phrase describing one event.
+        3. character_updates: For each character who meaningfully changes, write one sentence describing the concrete change (knowledge, status, relationship, or decision). Omit characters with no meaningful change.
+        </extraction_rules>
 
-        Step 1: Think through the key events and character changes in this chapter carefully.
-        - What is the overall narrative arc?
-        - What are the 3-6 most important discrete plot events in order?
-        - What changed for each character — internal state, knowledge, relationships?
-
-        Step 2: Now format your analysis as a JSON object with exactly these fields:
+        <output_schema>
         {{
-            "chapter_summary": "a single string, 150-250 words summarizing the chapter",
-            "key_events": ["event 1 as short string", "event 2 as short string", "event 3 as short string"],
-            "character_updates": {{
-                "CharacterName": "one sentence describing what changed for them"
-            }}
+        "chapter_summary": "single string, 150-250 words",
+        "key_events": [
+            "event 1 as a short phrase",
+            "event 2 as a short phrase",
+            "event 3 as a short phrase"
+        ],
+        "character_updates": {{
+            "CharacterName": "one sentence describing what concretely changed for them"
+        }}
+        }}
+        </output_schema>
+
+        <examples>
+        Example 1:
+        {{
+        "chapter_summary": "Chapter 4 opens with Mira discovering the forged seal on the treaty document, confirming her suspicion that Lord Aldren has been manipulating the peace negotiations. She confronts her advisor Cael, who admits he knew but feared speaking out. After a tense argument, Mira sends Cael to intercept the courier before the treaty reaches the capital. Meanwhile, Aldren meets in secret with the merchant guild, promising them trade exemptions in exchange for silence. The chapter ends with Mira alone in the war room, burning her draft resignation letter.",
+        "key_events": [
+            "Mira discovers the forged seal on the treaty",
+            "Cael admits he withheld the information",
+            "Mira orders Cael to intercept the courier",
+            "Aldren bribes the merchant guild for silence",
+            "Mira burns her resignation letter"
+        ],
+        "character_updates": {{
+            "Mira": "Shifts from suspicion to certainty about Aldren's betrayal and chooses to fight rather than resign.",
+            "Cael": "His complicit silence is exposed, straining his loyalty bond with Mira.",
+            "Aldren": "Deepens his conspiracy by securing the merchant guild's silence."
+        }}
         }}
 
-        RULES:
-        - key_events must be a list of 3-6 separate short strings, one event per item
-        - character_updates values must be short single sentences
-        - Return only the JSON object, no extra text
-        """
+        Example 2 — chapter with fewer events:
+        {{
+        "chapter_summary": "Chapter 7 is a quiet interlude set the morning after the siege. Bren tends to his wounds alone in the barracks, refusing help from the field medic. A brief visit from Commander Yael reveals that the siege was a deliberate trap, not a raid. Bren says nothing but his expression confirms he already suspected. The chapter closes with Bren sharpening his blade in silence as the rest of the camp sleeps.",
+        "key_events": [
+            "Bren refuses medical aid and isolates himself",
+            "Yael reveals the siege was a planned trap",
+            "Bren's reaction confirms prior suspicion"
+        ],
+        "character_updates": {{
+            "Bren": "Confirmed his suspicion that the siege was deliberate; retreats further into isolation.",
+            "Yael": "Chooses to share classified information with Bren, signaling a shift in trust."
+        }}
+        }}
+        </examples>
+
+        Extract from the chapter draft above. Return only the JSON object. No markdown. No extra text."""
 
         try:
-            llm_raw = get_llm(select_model("analysis"), temp=0, max_tokens=1500)
+            llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
             raw_response = llm_raw.invoke(
-                [SystemMessage(content="You are a JSON-only summarization engine. Return only valid JSON."),
-                 HumanMessage(content=double_prompt_user)]
+                [
+                    SystemMessage(content=system_fallback),
+                    HumanMessage(content=fallback_prompt)
+                ]
             )
             repaired = repair_json(raw_response.content)
             parsed = json.loads(repaired)
