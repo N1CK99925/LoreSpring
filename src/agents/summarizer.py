@@ -2,20 +2,32 @@ from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
 from src.schemas.summarizer import SummarizerResult
 from langchain_core.messages import HumanMessage, SystemMessage
+from src.memory.lightrag import query_lore
 from json_repair import repair_json
 import json
 
 
-def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
+from langsmith import traceable
+
+
+@traceable(name="summarizer")
+async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     draft = state.get("draft")
     chapter_number = state.get("chapter_number")
     metadata = state.get("metadata", {})
     genre = metadata.get("genre", "fantasy")
+    user_direction = state.get("user_direction", "")
 
     if not draft:
         return state
 
-    system = """
+    
+    lore_context = await query_lore(
+        f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
+        mode='hybrid'
+    )
+
+    system = f"""
     You are a structured narrative summarization engine.
 
     Your job:
@@ -24,6 +36,9 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     - Extract meaningful character state changes — only what actually changed.
     - Do NOT invent details not present in the chapter.
     - Do NOT evaluate prose quality.
+
+    Consider this lore context while summarizing:
+    {lore_context}
     """
 
     user = f"""
@@ -41,7 +56,6 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     key_events = []
     character_updates = {}
 
-    
     try:
         llm = get_llm(select_model("analysis"), temp=0, max_tokens=1500)
         structured_llm = llm.with_structured_output(SummarizerResult)
@@ -56,7 +70,6 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     except Exception as e1:
         print(f"summary node attempt 1 failed: {e1}, trying fallback...")
 
-        
         double_prompt_user = f"""
         CHAPTER NUMBER: {chapter_number}
         GENRE: {genre}
@@ -64,6 +77,8 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         --- CHAPTER START ---
         {draft}
         --- CHAPTER END ---
+
+        Consider the following lore context while summarizing: {lore_context}
 
         Step 1: Think through the key events and character changes in this chapter carefully.
         - What is the overall narrative arc?
@@ -91,13 +106,9 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
                 [SystemMessage(content="You are a JSON-only summarization engine. Return only valid JSON."),
                  HumanMessage(content=double_prompt_user)]
             )
-            raw_text = raw_response.content
-
-            
-            repaired = repair_json(raw_text)
+            repaired = repair_json(raw_response.content)
             parsed = json.loads(repaired)
 
-            
             result = SummarizerResult(**parsed)
             chapter_summary = result.chapter_summary
             key_events = result.key_events
@@ -107,7 +118,6 @@ def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         except Exception as e2:
             print(f"summary node attempt 2 failed: {e2}, using fallback defaults")
 
-    
     existing = [
         s for s in state.get("previous_chapter_summary", [])
         if s["chapter_number"] != chapter_number

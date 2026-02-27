@@ -2,22 +2,31 @@ from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
 from src.schemas.revision import RevisionResult
 from langchain_core.messages import HumanMessage, SystemMessage
+from src.memory.lightrag import query_lore
 from json_repair import repair_json
 import json
 
+from langsmith import traceable
 
-def revision_agent_node(state: NarrativeState) -> NarrativeState:
+@traceable(name="revsion")
+async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     metadata = state.get('metadata', {})
     genre = metadata.get('genre', 'fantasy')
     draft_current = state.get('draft')
     revision_count = state.get('revision_count', 0)
     chapter_number = state.get("chapter_number")
-    user_direction = state.get('user_direction')
+    user_direction = state.get('user_direction', "")
 
     if not draft_current:
         return state
 
-    system = """
+   
+    lore_context = await query_lore(
+        f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
+        mode='hybrid'
+    )
+
+    system = f"""
     You are a strict literary editor.
     Your job:
     - Evaluate quality numerically.
@@ -26,6 +35,9 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
     - Do NOT add new story content.
     - Be concise and critical.
     - Be conservative in scoring (most drafts fall between 5-7).
+
+    Consider this lore context while evaluating:
+    {lore_context}
     """
 
     user = f"""
@@ -60,7 +72,6 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
     metrics_dict = {}
     quality_feedback = []
 
-    # --- ATTEMPT 1: standard with_structured_output ---
     try:
         llm = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
         structured_llm = llm.with_structured_output(RevisionResult)
@@ -75,7 +86,6 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
     except Exception as e1:
         print(f"revision node attempt 1 failed: {e1}, trying fallback...")
 
-        # --- ATTEMPT 2: json_mode + double prompt + json_repair + manual pydantic validation ---
         double_prompt_user = f"""
         CHAPTER NUMBER: {chapter_number}
         GENRE: {genre}
@@ -88,6 +98,8 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
         --- CHAPTER DRAFT START ---
         {draft_current}
         --- CHAPTER DRAFT END ---
+
+        Consider the following lore context while evaluating: {lore_context}
 
         Step 1: Carefully read the draft and think through each quality dimension:
         - pacing: does the scene move at the right speed? does it drag or rush?
@@ -133,7 +145,6 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
             repaired = repair_json(raw_response.content)
             parsed = json.loads(repaired)
 
-            
             result = RevisionResult(**parsed)
             metrics_dict = result.quality_metrics.model_dump()
             quality_feedback = result.quality_feedback
@@ -147,7 +158,6 @@ def revision_agent_node(state: NarrativeState) -> NarrativeState:
             state["should_revise"] = True
             return state
 
-    
     state["quality_metrics"] = metrics_dict
     state["quality_feedback"] = quality_feedback
 

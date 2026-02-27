@@ -30,3 +30,5 @@ groq>=0.5.0
 # Testing/Dev (optional, install with -D)
 # pytest>=8.3.0
 # pytest-asyncio>=0.24.0
+
+lightrag-hku[api]
