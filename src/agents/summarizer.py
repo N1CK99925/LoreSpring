@@ -65,7 +65,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     try:
         llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
         structured_llm = llm.with_structured_output(SummarizerResult)
-        result: SummarizerResult = structured_llm.invoke(
+        result: SummarizerResult = await structured_llm.ainvoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
         )
         chapter_summary = result.chapter_summary
@@ -157,7 +157,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
-            raw_response = llm_raw.invoke(
+            raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
                     HumanMessage(content=fallback_prompt)
@@ -175,17 +175,23 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         except Exception as e2:
             print(f"summary node attempt 2 failed: {e2}, using fallback defaults")
 
-    existing = [
-        s for s in state.get("previous_chapter_summary", [])
-        if s["chapter_number"] != chapter_number
-    ]
-    existing.append({
+    
+    new_summary = {
         "chapter_number": chapter_number,
         "summary": chapter_summary,
         "key_events": key_events,
         "character_updates": character_updates,
-    })
-    state["previous_chapter_summary"] = existing
+    }
 
-    print("summary node working")
-    return state
+   
+    existing_summaries = state.get("previous_chapter_summary", [])
+    updated_summaries = [
+        s for s in existing_summaries 
+        if s.get("chapter_number") != chapter_number
+    ]
+    updated_summaries.append(new_summary)
+
+   
+    return {
+        "previous_chapter_summary": updated_summaries
+    }

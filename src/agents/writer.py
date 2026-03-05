@@ -41,6 +41,8 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
 
     metrics = state.get("quality_metrics", {})
     metrics_text = "\n".join([f"- {k}: {v}/10" for k, v in metrics.items()])
+    
+    print("REVSION RESULT",state.get("revision_result"), {})
 
 
   
@@ -103,7 +105,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
 
         llm = get_llm(select_model("creative_writing"), temp=temp, max_tokens=2000)
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
-        response = llm.invoke(messages)
+        response = await llm.ainvoke(messages)
 
         state["draft"] = response.content
         state["revision_count"] = 1
@@ -162,8 +164,14 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
 
         llm = get_llm(select_model("creative_writing"), temp=temp, max_tokens=2000)
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
-        response = llm.invoke(messages)
+        response = await llm.ainvoke(messages)
 
-        state["draft"] = response.content
-        state["revision_count"] = revision_count + 1
-        return state
+        # state["draft"] = response.content
+        # state["revision_count"] = revision_count + 1
+        # return state
+        
+        return {
+            **state,
+            "draft": response.content,
+            "revision_count": revision_count + 1
+        }

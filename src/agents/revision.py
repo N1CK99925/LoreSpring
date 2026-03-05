@@ -81,7 +81,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     try:
         llm = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
         structured_llm = llm.with_structured_output(RevisionResult)
-        result: RevisionResult = structured_llm.invoke(
+        result: RevisionResult = await structured_llm.ainvoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
         )
 
@@ -189,7 +189,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
-            raw_response = llm_raw.invoke(
+            raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
                     HumanMessage(content=fallback_prompt)
@@ -212,23 +212,19 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
             state["should_revise"] = True
             return state
 
-    state["quality_metrics"] = metrics_dict
-    state["quality_feedback"] = quality_feedback
-
-    print(quality_feedback)
-
+  
     avg_score = sum(metrics_dict.values()) / len(metrics_dict) if metrics_dict else 0.0
-    state["quality_score"] = avg_score
-
+    
+    
     max_revisions = state.get("max_revisions", 2)
     threshold = state.get("quality_threshold", 6.5)
 
-    state["should_revise"] = (
-        state.get("should_revise", False) or
-        (avg_score < threshold and revision_count < max_revisions)
-    )
-
-    print(avg_score)
-    print("revision node working\n")
-
-    return state
+    
+    return {
+        "revision_result": {
+            "quality_metrics": metrics_dict,
+            "quality_feedback": quality_feedback
+        },
+        "quality_score": avg_score,
+        "should_revise": (avg_score < threshold and revision_count < max_revisions)
+    }

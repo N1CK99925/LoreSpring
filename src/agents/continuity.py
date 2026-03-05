@@ -76,7 +76,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
         llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
         structured_llm = llm.with_structured_output(ContinuityResult)
 
-        result: ContinuityResult = structured_llm.invoke(
+        result: ContinuityResult = await structured_llm.ainvoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
         )
 
@@ -147,7 +147,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
-            raw_response = llm_raw.invoke(
+            raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
                     HumanMessage(content=fallback_prompt)
@@ -168,11 +168,15 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
     critical = [i for i in issues if i.get("severity") == "high"]
 
-    state["continuity_issues"] = issues
-    state["continuity_feedback"] = critical
-    state["should_revise"] = len(critical) > 0
 
-    print("continuity issues:", issues)
-    print("force revise:", state["should_revise"])
-
-    return state
+    
+    return {
+        
+        "continuity_issues": issues,
+        "continuity_feedback": critical,
+        "should_revise": len(critical) > 0
+        
+        
+        
+        
+    }

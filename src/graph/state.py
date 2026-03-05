@@ -33,6 +33,8 @@ class NarrativeState(TypedDict,total= False):
     quality_threshold: float
     
    
+    
+   
     new_entities: Dict[str, str] 
     
 
