@@ -2,3 +2,5 @@
 .env
 __pycache__
 
+lore_db
+memory_json
