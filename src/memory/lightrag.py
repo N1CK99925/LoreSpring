@@ -1,3 +1,4 @@
+import asyncio
 import os
 # TODO: delete graph memory and rebuild in mid function
 from lightrag import LightRAG, QueryParam
@@ -35,6 +36,7 @@ async def initialize_rag(working_dir: str = "./lore_db") -> LightRAG:
         working_dir=working_dir,
         llm_model_func=groq_llm_func,
         chunk_token_size=400,
+        chunk_overlap_token_size=50,
         embedding_func=EmbeddingFunc(
             embedding_dim=384, 
             max_token_size=512,
@@ -49,11 +51,14 @@ async def initialize_rag(working_dir: str = "./lore_db") -> LightRAG:
 
 
 _rag_instance = None
+_rag_lock = asyncio.Lock()
 
 async def get_rag() -> LightRAG:
     global _rag_instance
     if _rag_instance is None:
-        _rag_instance = await initialize_rag()
+        async with _rag_lock:
+            if _rag_instance is None: 
+                _rag_instance = await initialize_rag()
     return _rag_instance
 
 async def insert_chapter(draft: str, chapter_number: int):

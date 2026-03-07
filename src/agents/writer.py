@@ -1,3 +1,5 @@
+
+from src.agents.utils import build_revision_plan
 from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -23,30 +25,26 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
     genre = metadata.get("genre", "fantasy")
     revision_count = state.get("revision_count", 0)
     
-    feedback = state.get("revision_result", [])
     draft_current = state.get("draft", "")
     
     
-    should_revise = state.get("should_revise", False)
+    
 
     temp = max(0.3, 0.7 - (revision_count * 0.2))
     continuity_issues = state.get("continuity_issues", [])
 
-    feedback_text = "\n".join(feedback) if feedback else "No specific quality issues noted."
-    
+   
     
     continuity_text = "\n".join(
         [f"[{i.get('severity')}] {i.get('description')}" for i in continuity_issues]
     ) if continuity_issues else "No continuity issues detected."
 
-    metrics = state.get("quality_metrics", {})
-    metrics_text = "\n".join([f"- {k}: {v}/10" for k, v in metrics.items()])
     
-    print("REVSION RESULT",state.get("revision_result"), {})
+    
 
 
   
-    if revision_count == 0 or not should_revise:
+    if revision_count == 0:
         lore_context = await query_lore(
             f"""
             Provide all relevant established canonical facts involving:
@@ -60,7 +58,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             """,
             mode="hybrid"
         )
-        state["lore_context"] = lore_context
+        
     else:
         lore_context = state.get("lore_context", "")
 
@@ -69,7 +67,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
 
 
 
-    if revision_count == 0 or not should_revise:
+    if revision_count == 0:
         system = f"""
         You are a master {genre} fiction author with 20 years of experience crafting immersive, character-driven narratives.
 
@@ -91,6 +89,9 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         - You MUST NOT contradict any fact in <established_lore>
         - Output ONLY the chapter text — no title, no preamble, no commentary
         </hard_constraints>
+        
+        
+        
             """
 
         user = f"""
@@ -107,12 +108,21 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         response = await llm.ainvoke(messages)
 
-        state["draft"] = response.content
-        state["revision_count"] = 1
-        return state
+        return {
+            "lore_context": lore_context,
+            "draft": response.content,
+            "revision_count": 1
+        }
 
 
     else:
+        feedback = state.get("revision_result", {}).get("quality_feedback", [])
+        feedback_text = "\n".join(feedback) if feedback else "No specific quality issues noted."
+        
+        metrics = state.get("revision_result", {}).get("quality_metrics", {})
+        metrics_text = "\n".join([f"- {k}: {v}/10" for k, v in metrics.items()])
+        revision_result = state.get("revision_result", {})
+        revision_plan = build_revision_plan(revision_result) 
 
         system = f"""
             You are a senior developmental editor rewriting a {genre} chapter that failed quality review.
@@ -129,18 +139,30 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             {metrics_text}
             </quality_scores>
 
-            <revision_strategy>
-            1. Identify the TWO lowest-scoring dimensions above
-            2. For each: rewrite the specific scenes responsible for those low scores
-            3. Do not just polish — REWRITE those scenes from scratch with a different approach
-            4. Keep scenes scoring 7+ largely intact, tightening prose only
-            </revision_strategy>
+             <revision_targets>
+                You MUST address ONLY these two dimensions. Everything else stays intact.
+                
+                {chr(10).join([f"- {dim}: {instr}" for dim, instr in revision_plan['dimension_instructions'].items()])}
+                </revision_targets>
+
+                <banned_phrases>
+                These exact phrases appeared in the previous draft and were flagged as weak.
+                Do NOT use them or any close variation:
+                {chr(10).join([f'- "{p}"' for p in revision_plan['banned_phrases']])}
+                </banned_phrases>
+
+                <specific_problems>
+                {chr(10).join(revision_plan['raw_feedback'])}
+                </specific_problems>
 
             <hard_constraints>
             - Preserve all core plot beats from the original draft
             - Fix every continuity error listed above
             - Output ONLY the revised chapter text
             </hard_constraints>
+            
+            
+            
             """
 
         user = f"""
@@ -166,12 +188,9 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         response = await llm.ainvoke(messages)
 
-        # state["draft"] = response.content
-        # state["revision_count"] = revision_count + 1
-        # return state
         
         return {
-            **state,
+            "lore_context": lore_context,
             "draft": response.content,
             "revision_count": revision_count + 1
         }
