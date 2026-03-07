@@ -19,20 +19,25 @@ def load_memory():
             return json.load(f)
     return []
 
-def route_after_review(state: NarrativeState):
+def route_after_review(state):
     revision_count = state.get("revision_count", 0)
     max_revisions = state.get("max_revisions", 2)
-
+    
     if revision_count >= max_revisions:
         return "summarizer"
+    
+    below_threshold = state.get("quality_score", 0) < state.get("quality_threshold", 7.0)
+    return "writer" if below_threshold else "summarizer"
 
-    has_critical_continuity = len(state.get("continuity_feedback", [])) > 0
-    below_quality_threshold = state.get("quality_score", 0) < state.get("quality_threshold")
 
-    if has_critical_continuity or below_quality_threshold:
+def route_after_continuity(state):
+    has_critical = len(state.get("continuity_feedback", [])) > 0
+    revision_count = state.get("revision_count", 0)
+    max_revisions = state.get("max_revisions", 2)
+    
+    if has_critical and revision_count < max_revisions:
         return "writer"
-
-    return "summarizer"
+    return "reviewer"
 
 async def main():
     workflow = StateGraph(NarrativeState)
@@ -42,9 +47,9 @@ async def main():
     workflow.add_node("continuity", continue_agent_node)
     workflow.add_node("lorekeeper",lore_keeper_node)
     workflow.set_entry_point("writer")
-    workflow.add_edge("writer", "reviewer")
-    workflow.add_edge("reviewer", "continuity")
-    workflow.add_conditional_edges("continuity", route_after_review)
+    workflow.add_edge("writer", "continuity")
+    workflow.add_conditional_edges("continuity", route_after_continuity)
+    workflow.add_conditional_edges("reviewer", route_after_review)
     workflow.add_edge("summarizer", "lorekeeper")
     workflow.add_edge("lorekeeper",END)
     app = workflow.compile()
@@ -85,7 +90,7 @@ async def main():
         json.dump(memory, f, indent=2)
 
     print(result)
-    print(f"Quality: {result.get('quality_feedback', 'N/A')}")
+    print(f"Quality: {result.get('revision_result', {}).get('quality_feedback', 'N/A')}")
     print(f"Final Chapter Preview:\n{result['draft']}...")
 
 if __name__ == "__main__":
