@@ -10,7 +10,7 @@ from src.memory.embedding import embed_func
 async def groq_llm_func(
     prompt,
     system_prompt=None,
-    history_messages=[],
+    history_messages=None,
     **kwargs
 ) -> str:
     if "response_format" in kwargs:
@@ -19,7 +19,7 @@ async def groq_llm_func(
         "meta-llama/llama-4-scout-17b-16e-instruct",
         prompt,
         system_prompt=system_prompt,
-        history_messages=history_messages,
+        history_messages=history_messages or [],
         api_key=settings.groq_api_key,
         base_url="https://api.groq.com/openai/v1",
         **kwargs

@@ -19,6 +19,8 @@ async def lore_keeper_node(state: NarrativeState) -> NarrativeState:
     
     await insert_chapter(draft, chapter_number)
     
-    state["lore_context"] = {"ready": True, "chapter": chapter_number}
+    
     print(f"lore keeper: chapter {chapter_number} indexed into LightRAG")
-    return state
+    return {
+        
+    }

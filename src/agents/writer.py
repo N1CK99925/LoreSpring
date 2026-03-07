@@ -23,7 +23,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
     genre = metadata.get("genre", "fantasy")
     revision_count = state.get("revision_count", 0)
     
-    feedback = state.get("quality_feedback", [])
+    feedback = state.get("revision_result", [])
     draft_current = state.get("draft", "")
     
     
