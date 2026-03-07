@@ -20,7 +20,7 @@ def select_model(task: str):
         "creative_writing": "llama-3.3-70b-versatile",
         "analysis": "qwen/qwen3-32b",
         "extraction": "llama-3.1-8b-instant"
-    }.get(task, "llama-3.1-70b-versatile")
+    }.get(task, "llama-3.1-8b-instant")
 
 def invoke_with_retry(llm, messages, max_retries=3):
     for i in range(max_retries):

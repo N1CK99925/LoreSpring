@@ -2,7 +2,7 @@ from src.schemas.lore import LoreResult
 from src.schemas.continuity import ContinuityResult
 from src.schemas.revision import RevisionResult
 from src.schemas.summarizer import SummarizerResult
-from typing import TypedDict,  List, Dict
+from typing import Any, TypedDict,  List, Dict
 
 class NarrativeState(TypedDict,total= False):
     
@@ -11,7 +11,7 @@ class NarrativeState(TypedDict,total= False):
     user_direction: str
     metadata: Dict[str,str]  
     
-    lore_context: LoreResult 
+    lore_context: str 
     previous_chapter_summary: SummarizerResult
 
     draft: str
@@ -22,6 +22,7 @@ class NarrativeState(TypedDict,total= False):
     revision_count: int
     max_revisions: int  
     should_revise : bool
+    revision_plan: Dict[str, Any]
     
     
     continuity_issues: ContinuityResult

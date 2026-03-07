@@ -32,3 +32,5 @@ groq>=0.5.0
 # pytest-asyncio>=0.24.0
 
 lightrag-hku[api]
+
+sentence-transformers>=2.3.0
