@@ -30,16 +30,18 @@
   },
   {
     "chapter_number": 3,
-    "summary": "Sera arrives at the hidden dock alone at night, expecting to meet smugglers. Instead, she encounters Harbor Inspector Ryker, who reveals Dav is his informant, not the criminal. Ryker accuses Sera\u2019s altered map of compromising their operation and potentially causing a death. Sera, shaken but determined, agrees to work with Ryker to mitigate the damage. The chapter ends with them walking into the mist together, facing the consequences of her actions.",
+    "summary": "Sera arrives alone at the real dock at night, expecting smugglers but instead encounters Harbor Inspector Ryker. He reveals Dav is his informant, not a criminal, and accuses Sera's altered map of compromising an anti-smuggling operation. Sera realizes her map may have led to an operative's potential death and agrees to help Ryker investigate at the hidden dock. The chapter ends with them entering the mist-shrouded marshes to assess the damage.",
     "key_events": [
-      "Sera arrives at the hidden dock at night",
-      "Sera encounters Harbor Inspector Ryker instead of smugglers",
-      "Ryker reveals Dav is his informant",
-      "Ryker accuses Sera\u2019s altered map of causing a death",
-      "Sera agrees to work with Ryker to fix the situation"
+      "Sera arrives at the real dock alone at night",
+      "Harbor Inspector Ryker reveals Dav is his informant",
+      "Sera learns her altered map compromised the operation",
+      "Ryker warns an operative may be in danger due to the map",
+      "Sera agrees to accompany Ryker to the hidden dock",
+      "They enter the mist to investigate the smuggling operation"
     ],
     "character_updates": {
-      "Sera": "Learns Dav is an informant, accepts responsibility for her altered map\u2019s consequences, and commits to collaborating with Ryker."
+      "Ryker": "Established as a harbor inspector with an active anti-smuggling operation. His urgency and concern for an operative's safety are revealed.",
+      "Sera": "Gains knowledge that Dav is an informant, experiences guilt over her map's consequences, and commits to helping Ryker. Her understanding of the smuggling operation's complexity deepens."
     }
   }
 ]

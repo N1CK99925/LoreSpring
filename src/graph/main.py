@@ -39,7 +39,8 @@ def route_after_continuity(state):
         return "writer"
     return "reviewer"
 
-async def main():
+
+def build_graph():
     workflow = StateGraph(NarrativeState)
     workflow.add_node("writer", writer_agent_node)
     workflow.add_node("reviewer", revision_agent_node)
@@ -52,7 +53,12 @@ async def main():
     workflow.add_conditional_edges("reviewer", route_after_review)
     workflow.add_edge("summarizer", "lorekeeper")
     workflow.add_edge("lorekeeper",END)
-    app = workflow.compile()
+    return workflow.compile()
+
+async def main():
+    app = build_graph()
+
+    
 
     previous_memory = load_memory()
 
@@ -69,8 +75,6 @@ async def main():
         "previous_chapter_summary": previous_memory,
         "draft": "",
         "revision_count": 0,
-        "issues": [],
-        "quality_metrics": {},
         "quality_threshold":7.0,
         "new_entities": {},
         "final_chapter": "",
