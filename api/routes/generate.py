@@ -3,7 +3,7 @@ from src.schemas.api.generation_request import GenerationRequest
 from src.schemas.api.generation_response import GenerationResponse
 from src.graph.pipeline import run_pipeline
 
-router = APIRouter()
+router = APIRouter(tags=["Generation"])
 
 
 
