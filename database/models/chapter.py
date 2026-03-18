@@ -12,7 +12,7 @@ class Project(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     tone: Mapped[str] = mapped_column(String(255), nullable=False)
     style: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     
     
@@ -29,7 +29,7 @@ class Chapter(Base):
     revision_count: Mapped[int] = mapped_column(Integer, default=0)
     quality_score: Mapped[float] = mapped_column(Float, default=0.0)
     
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     final_chapter: Mapped[str] = mapped_column(Text, nullable=True)
     
     

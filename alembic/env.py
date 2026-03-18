@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from database.base import Base
+from database.models.chapter import Project, Chapter, ChapterSummary
 
 from config.settings import settings
 

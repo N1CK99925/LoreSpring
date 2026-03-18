@@ -2,9 +2,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from config.settings import settings
 
 
-engine = create_async_engine(settings.postgres_url,echo = True)
-
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, connect_args={"ssl": True})
+engine = create_async_engine(settings.postgres_url,echo = True,connect_args={"ssl": True,"statement_cache_size": 0})
+# TODO: remove prepared_statement_cache_size in prod
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False )
 
 
 async def get_database():
