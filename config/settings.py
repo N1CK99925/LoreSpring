@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     langsmith_endpoint: str | None = None
     langsmith_api_key: str | None = None
     langsmith_project: str | None = None
+    postgres_url_sync: str
     
     class Config:
         env_file = ".env"

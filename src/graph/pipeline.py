@@ -2,22 +2,20 @@
 from database.session import  AsyncSessionLocal
 
 from src.graph.main import build_graph
-from src.graph.state import NarrativeState
 from src.schemas.api.generation_request import GenerationRequest
 from src.schemas.api.generation_response import GenerationResponse
-
-from src.services.postgres import get_project_summaries, get_or_create_project, save_chapter, save_summary
-
+from src.services.postgres import get_project_summaries, get_or_create_project
 
 
 
 
 
-async def run_pipeline(request: GenerationRequest ) -> GenerationResponse:
+
+async def run_pipeline(request: GenerationRequest ,checkpointer) -> GenerationResponse:
     async with AsyncSessionLocal() as session:
         
         previous_memory = await get_project_summaries(session, request.project_id)
-        app = build_graph()
+        app = build_graph(checkpointer)
         
         
         await get_or_create_project(session, request.project_id, request.metadata.model_dump())
@@ -47,27 +45,8 @@ async def run_pipeline(request: GenerationRequest ) -> GenerationResponse:
     
         result = await app.ainvoke(initial_state,config=config)
     
-        chapter = await save_chapter(session,
-                                     request.project_id,
-                                     request.chapter_number,
-                                     request.user_direction,
-                                     result.get("final_chapter", ""),
-                                     result.get("quality_score", 0.0),
-                                     result.get("revision_count", 0)
-            )
-        summary_data = result.get("previous_chapter_summary", [])
-        latest = next(
-            (s for s in summary_data if s["chapter_number"] == request.chapter_number), 
-            None
-        )
-        if latest:
-            await save_summary(
-                session,
-                chapter.id,
-                latest["summary"],
-                latest["key_events"],
-                latest["character_updates"]
-            )
+       
+      
         
         
     print(result)

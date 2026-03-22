@@ -39,3 +39,5 @@ asyncpg
 sqlalchemy
 
 alembic
+
+langgraph-checkpoint-postgres
