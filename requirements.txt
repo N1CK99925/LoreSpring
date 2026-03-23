@@ -9,8 +9,7 @@ langgraph-checkpoint-postgres>=0.1.0
 
 # Databases
 neo4j>=5.25.0
-psycopg[binary,pool]>=3.2.0
-pinecone-client>=3.3.0
+
 
 # FastAPI deployment
 fastapi>=0.115.0
@@ -34,3 +33,19 @@ groq>=0.5.0
 lightrag-hku[api]
 
 sentence-transformers>=2.3.0
+
+asyncpg
+
+sqlalchemy
+
+alembic
+
+langgraph-checkpoint-postgres
+
+
+
+
+
+pyjwt
+pwdlib[argon2]
+python-multipart

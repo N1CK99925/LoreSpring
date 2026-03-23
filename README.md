@@ -18,6 +18,20 @@ LoreSpring is a narrative generation system that uses multiple AI agents in a co
 
 ```
 lore-spring/
+├── api/                 # FastAPI application
+│   ├── main.py         # FastAPI app initialization
+│   ├── websocket.py    # WebSocket handlers
+│   └── routes/         # API endpoints
+│       ├── generate.py # Chapter generation endpoints
+│       ├── health.py   # Health check endpoints
+│       └── review.py   # Review and revision endpoints
+├── auth/                # Authentication & security
+│   └── hashing.py      # Password hashing utilities
+├── database/            # Database management
+│   ├── base.py         # SQLAlchemy declarative base
+│   ├── session.py      # Database session management
+│   └── models/         # ORM models
+│       └── chapter.py  # Chapter model
 ├── src/
 │   ├── agents/          # Agent implementations
 │   │   ├── writer.py    # Initial draft generation
@@ -25,12 +39,14 @@ lore-spring/
 │   │   ├── continuity.py # Lore consistency validation
 │   │   ├── summarizer.py # Chapter summarization
 │   │   ├── lore_keeper.py # Lore database updates
-│   │   ├── quality.py   # (Not implemented)
+│   │   ├── quality.py   # Quality assessment
+│   │   ├── human_review.py # Human review workflow
 │   │   └── utils.py     # Shared utilities
 │   ├── graph/           # Workflow orchestration
 │   │   ├── state.py     # NarrativeState definition
 │   │   ├── main.py      # StateGraph setup and compilation
-│   │   └── subgraphs.py # (Not implemented)
+│   │   ├── pipeline.py  # Graph pipeline management
+│   │   └── subgraphs.py # Subgraph implementations
 │   ├── memory/          # Memory management
 │   │   ├── lightrag.py  # LightRAG integration
 │   │   └── embedding.py # Sentence transformer embeddings
@@ -38,23 +54,33 @@ lore-spring/
 │   │   ├── lore.py      # Lore data structures
 │   │   ├── continuity.py # Continuity check results
 │   │   ├── revision.py  # Revision feedback
-│   │   └── summarizer.py # Summary formats
-│   ├── services/        # (Not implemented)
-│   │   ├── neo4j.py
-│   │   ├── pinecone.py
-│   │   └── postgres.py
+│   │   ├── summarizer.py # Summary formats
+│   │   └── api/         # API schemas
+│   │       ├── generation_request.py
+│   │       └── generation_response.py
+│   ├── services/        # External service integrations
+│   │   ├── neo4j.py     # Neo4j graph database
+│   │   ├── pinecone.py  # Pinecone vector store
+│   │   └── postgres.py  # PostgreSQL database
 │   └── llm/             # Language model interfaces
 │       ├── groq_client.py # Groq API client
-│       └── prompts.py    # (Empty)
+│       └── prompts.py   # Prompt templates
 ├── config/              # Configuration management
 │   └── settings.py      # Pydantic settings
+├── alembic/             # Database migrations
+│   ├── env.py           # Migration environment setup
+│   ├── versions/        # Migration scripts
+│   │   ├── 66dd3f3870f4_init.py # Initial schema
+│   │   └── 407d26302ee2_timezone_fix.py # Timezone updates
+│   └── script.py.mako   # Migration template
 ├── lore_db/             # Local knowledge graph storage
 │   ├── *.json          # Key-value stores
 │   ├── *.graphml       # Graph structure
 │   └── vdb_*.json      # Vector databases
+├── alembic.ini         # Alembic configuration
 ├── memory.json         # Chapter memory store
 ├── requirements.txt    # Python dependencies
-├── Dockerfile          # (Incomplete)
+├── Dockerfile          # Container deployment
 └── README.md           # This file
 ```
 
@@ -138,7 +164,7 @@ LoreSpring uses LightRAG for lore-aware memory:
 
 ## Usage
 
-### Running the Graph
+### Running the Graph Directly
 
 Execute the main narrative generation workflow:
 
@@ -153,6 +179,23 @@ This runs the complete agent pipeline:
 4. Summarizer creates chapter summary
 5. Lore Keeper updates knowledge graph
 
+### Running the FastAPI Server
+
+Start the API server for HTTP and WebSocket access:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+The API will be available at `http://localhost:8000` with interactive docs at `/docs`.
+
+#### API Endpoints
+
+- **POST /api/generate** - Generate a new chapter with given parameters
+- **GET /api/health** - Health check endpoint
+- **POST /api/review** - Submit chapter for review and revision
+- **WebSocket /ws** - Real-time streaming of chapter generation
+
 ### Memory Management
 
 The system maintains memory in:
@@ -160,6 +203,27 @@ The system maintains memory in:
 - `lore_db/`: LightRAG knowledge graph files
 
 ## Configuration
+
+### Database Setup
+
+LoreSpring uses Alembic for database migrations. To set up the database:
+
+```bash
+# Create a new database migration
+alembic revision --autogenerate -m "Description of changes"
+
+# Apply all pending migrations
+alembic upgrade head
+
+# Rollback to previous migration
+alembic downgrade -1
+```
+
+Currently supported migrations:
+- Initial schema setup (66dd3f3870f4_init.py)
+- Timezone fixes (407d26302ee2_timezone_fix.py)
+
+Update `sqlalchemy.url` in `alembic.ini` to point to your database (PostgreSQL, MySQL, etc.).
 
 ### Narrative State
 
@@ -198,37 +262,58 @@ Core dependencies include:
 - **Sentence Transformers**: Text embeddings
 - **Pydantic**: Data validation and settings
 - **LangSmith**: Optional tracing and monitoring
+- **FastAPI**: Web framework for REST API
+- **Uvicorn**: ASGI server for FastAPI
+- **SQLAlchemy**: ORM for database access
+- **Alembic**: Database migration tool
+- **python-multipart**: Form data parsing
 
 ## Development Status
 
 ### Implemented
 - Core agent pipeline (Writer, Revision, Continuity, Summarizer, Lore Keeper)
+- Quality agent for content assessment
+- Human review workflow agent
 - LightRAG knowledge graph integration
 - Local JSON-based persistence
 - Groq LLM client with retry logic
-- Structured data schemas
-- Basic configuration management
+- Structured data schemas and API schemas
+- Configuration management via Pydantic
+- FastAPI REST application structure
+- WebSocket streaming support
+- Authentication layer with password hashing
+- Database models (Chapter) and ORM setup
+- Alembic database migrations (versioned)
+- Service integration stubs (Neo4j, Pinecone, PostgreSQL)
+
+### In Progress
+- API endpoints expansion (generate, health, review routes)
+- WebSocket full integration for real-time streaming
+- Database integration with PostgreSQL via Alembic
+- Complete containerization (Dockerfile)
 
 ### Not Yet Implemented
-- Quality agent (separate from revision)
-- API endpoints (FastAPI)
-- WebSocket streaming
-- External database integrations (Neo4j, Pinecone, PostgreSQL)
-- Test suite
-- Subgraphs for complex workflows
-- Prompt templates
-- Containerization (Dockerfile)
+- External database integrations (Neo4j, Pinecone, PostgreSQL production setup)
+- Comprehensive test suite
+- Advanced subgraphs for complex workflows
+- Prompt template management system
+- Deployment pipeline (CI/CD)
 
 ## Roadmap
 
-- [ ] Implement dedicated Quality agent
-- [ ] Add FastAPI REST endpoints
-- [ ] Implement WebSocket streaming for real-time generation
-- [ ] Add external database support
+- [x] Implement dedicated Quality agent
+- [x] Add FastAPI REST endpoints structure
+- [x] Implement WebSocket infrastructure
+- [x] Add database models and ORM setup
+- [x] Setup Alembic for database migrations
+- [ ] Complete all FastAPI endpoints (generate, review, status)
+- [ ] Full WebSocket streaming implementation
+- [ ] PostgreSQL production deployment
+- [ ] Add external database support (Neo4j, Pinecone)
 - [ ] Create comprehensive test suite
-- [ ] Implement subgraphs for advanced workflows
-- [ ] Add prompt template management
-- [ ] Complete Dockerfile for deployment
+- [ ] Implement advanced subgraphs for workflows
+- [ ] Add prompt template management system
+- [ ] Complete Dockerfile and deploy pipeline
 
 ## Contributing
 
@@ -240,7 +325,7 @@ Core dependencies include:
 
 ## License
 
-[Specify your license here]
+[]
 
 ## Acknowledgments
 
@@ -248,3 +333,7 @@ Core dependencies include:
 - Powered by Groq for fast LLM inference
 - Memory system based on LightRAG
 - Embeddings via Sentence Transformers
+
+
+
+STREAMING IS NOT YET SUPPORTED NOR IS AUTH

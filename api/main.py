@@ -1,11 +1,20 @@
 
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from config.settings import settings
+from api.routes import health, generate, review
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    async with AsyncPostgresSaver.from_conn_string(settings.postgres_url_sync) as checkpointer:
+        await checkpointer.setup()
+        app.state.checkpointer = checkpointer
+        yield
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
+app = FastAPI(lifespan=lifespan)
+app.include_router(health.router)
+app.include_router(generate.router)
+app.include_router(review.router)

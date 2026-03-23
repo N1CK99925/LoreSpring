@@ -8,11 +8,12 @@ class Settings(BaseSettings):
     # neo4j_pass: str = "password"
     # pinecone_api_key: str
     # pinecone_env: str = "us-west1-gcp-free" 
-    # postgres_url: str = "postgresql://user:pass@localhost/langgraph"
+    postgres_url: str 
     langsmith_tracing: bool | None = None
     langsmith_endpoint: str | None = None
     langsmith_api_key: str | None = None
     langsmith_project: str | None = None
+    postgres_url_sync: str
     
     class Config:
         env_file = ".env"

@@ -193,5 +193,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
    
     return {
-        "previous_chapter_summary": updated_summaries
+        "final_chapter" : state.get("draft", ""),
+        "previous_chapter_summary": updated_summaries,
+        "chapter_summary": chapter_summary
     }

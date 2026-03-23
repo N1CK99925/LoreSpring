@@ -41,3 +41,6 @@ class NarrativeState(TypedDict,total= False):
 
     final_chapter: str
     chapter_summary: str 
+    
+    
+    human_approved: bool
