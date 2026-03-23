@@ -45,7 +45,7 @@ def route_after_continuity(state):
     return "reviewer"
 
 
-
+# TODO: bring summarizer to to after human
 
 def build_graph(checkpointer=None):
     workflow = StateGraph(NarrativeState)

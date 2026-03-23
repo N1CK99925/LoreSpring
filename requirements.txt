@@ -41,3 +41,11 @@ sqlalchemy
 alembic
 
 langgraph-checkpoint-postgres
+
+
+
+
+
+pyjwt
+pwdlib[argon2]
+python-multipart
