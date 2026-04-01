@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from config.settings import settings
-from api.routes import health, generate, review
+from api.routes import health, generate, review , auth
 
 
 @asynccontextmanager
@@ -18,3 +18,6 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(generate.router)
 app.include_router(review.router)
+app.include_router(auth.router)
+
+

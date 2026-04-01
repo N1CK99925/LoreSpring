@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends
 from pydantic import BaseModel
 from langgraph.types import Command
 from database.session import AsyncSessionLocal
 from src.services.postgres import save_chapter, save_summary
 from src.graph.main import build_graph
 
+from api.auth.dependencies import get_current_user
+from database.models.user import User
 router = APIRouter(tags=["Review"])
 
 
@@ -13,7 +15,7 @@ class ResumeRequest(BaseModel):
 
 
 @router.get("/review/{thread_id}")
-async def get_review(thread_id: str, req: Request):
+async def get_review(thread_id: str, req: Request, user : User = Depends(get_current_user)):
     checkpointer = req.app.state.checkpointer
     config = {"configurable": {"thread_id": thread_id}}
     
@@ -34,7 +36,7 @@ async def get_review(thread_id: str, req: Request):
     raise HTTPException(status_code=400, detail="No interrupt found")
 
 @router.post("/resume/{thread_id}")
-async def resume_pipeline(thread_id: str, body: ResumeRequest, req: Request):
+async def resume_pipeline(thread_id: str, body: ResumeRequest, req: Request, user : User = Depends(get_current_user)):
     checkpointer = req.app.state.checkpointer
     app = build_graph(checkpointer)
     config = {"configurable": {"thread_id": thread_id}}
