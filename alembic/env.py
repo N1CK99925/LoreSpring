@@ -7,7 +7,7 @@ from alembic import context
 
 from database.base import Base
 from database.models.chapter import Project, Chapter, ChapterSummary
-
+from database.models.user import User
 from config.settings import settings
 
 config = context.config

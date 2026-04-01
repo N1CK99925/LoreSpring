@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     langsmith_api_key: str | None = None
     langsmith_project: str | None = None
     postgres_url_sync: str
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
     
     class Config:
         env_file = ".env"

@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from __future__ import annotations
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Float, Text, JSON, DateTime, ForeignKey
 from datetime import datetime, timezone
 from database.base import Base
@@ -13,6 +14,9 @@ class Project(Base):
     tone: Mapped[str] = mapped_column(String(255), nullable=False)
     style: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user: Mapped["User"] = relationship("User", back_populates="projects") # type: ignore
+    chapters: Mapped[list["Chapter"]] = relationship("Chapter", back_populates="project")
     
     
     
@@ -31,6 +35,7 @@ class Chapter(Base):
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     final_chapter: Mapped[str] = mapped_column(Text, nullable=True)
+    project: Mapped["Project"] = relationship("Project", back_populates="chapters")
     
     
     
@@ -42,3 +47,5 @@ class ChapterSummary(Base):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     key_events: Mapped[list] = mapped_column(JSON, default=list)
     character_updates: Mapped[dict] = mapped_column(JSON, default=dict)
+    
+    
