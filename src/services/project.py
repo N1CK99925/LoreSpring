@@ -3,7 +3,7 @@ from sqlalchemy import select,delete
 from database.models.chapter import Project
 
 async def get_projects(session: AsyncSession,user_id: int):
-    result = await session.execute(select(Project).where(Project.user_id == user_id))
+    result = await session.execute(select(Project).where(Project.user_id == user_id).order_by(Project.created_at.desc()))
     projects = result.scalars().all()
     return projects
     
@@ -19,7 +19,7 @@ async def create_project():
 # TODO implemet it after checkeing othe function in get_or _create projkect
 
 
-async def delete_project(session: AsyncSession, project_id:str,user_id:str):
+async def delete_project(session: AsyncSession, project_id:str,user_id:int):
     
     result = await session.execute(delete(Project).where(Project.id == project_id,Project.user_id == user_id))
     if result.rowcount == 0:

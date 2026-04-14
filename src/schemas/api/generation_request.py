@@ -15,3 +15,8 @@ class GenerationRequest(BaseModel):
     project_id: str = Field(min_length=1)
     user_direction: str = Field(min_length=10)
     metadata: StoryMetadata
+
+
+class CreateProjectRequest(BaseModel):
+    title: str
+    description: str
