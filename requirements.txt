@@ -42,6 +42,7 @@ alembic
 
 langgraph-checkpoint-postgres
 
+psycopg[binary]
 
 
 
