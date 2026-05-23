@@ -337,4 +337,5 @@ Core dependencies include:
 
 
 
-STREAMING IS NOT YET SUPPORTED NOR IS AUTH
+STREAMING IS NOT YET SUPPORTED 
+<!-- Better Error handle on login -->

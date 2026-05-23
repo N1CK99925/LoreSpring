@@ -22,7 +22,7 @@ async def get_or_create_project(session: AsyncSession,project_id: str, metadata:
         await session.refresh(project)
         return project
     
-    
+    # TODO: check if this goes againstt the user id forign key 
     
     
 async def save_chapter(session: AsyncSession, project_id: str , chapter_number: int, user_direction: str, final_chapter: str, quality_score: float, revision_count: int) -> Chapter:

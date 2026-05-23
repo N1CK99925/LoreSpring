@@ -3,9 +3,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
-from sqlalchemy import pool
+
 from config.settings import settings
 from api.routes import health, generate, review , auth,chapters,projects
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 @asynccontextmanager
@@ -19,7 +21,15 @@ async def lifespan(app):
     await pool.close()
 
 
+
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(health.router)
 app.include_router(generate.router)
 app.include_router(review.router)
