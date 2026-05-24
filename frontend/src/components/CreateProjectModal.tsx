@@ -61,7 +61,7 @@ export const CreateProjectModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-8 w-[400px] flex flex-col gap-4">
+      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-8 w-100 flex flex-col gap-4">
         {/* Header */}
         <h2 className="text-white text-lg font-semibold">Create New Project</h2>
 
@@ -220,7 +220,3 @@ const FormField = ({ label, required, input }: FormFieldProps) => {
     </div>
   )
 }
-
-// Shared input styles
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const inputClassName = "bg-[#080D0A] border border-[#1A3320] rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-[#00A86B] disabled:opacity-50"

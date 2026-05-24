@@ -23,7 +23,14 @@ async def get_project_api(project_id: str, user: User = Depends(get_current_user
     project = await get_project_by_id(db, project_id, user.id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    return {"id": project.id, "title": project.title}
+    return {
+        "id": project.id,
+        "title": project.title,
+        "genre": project.genre,
+        "tone": project.tone,
+        "style": project.style,
+        "created_at": project.created_at
+    }
 
 
 

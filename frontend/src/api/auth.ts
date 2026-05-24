@@ -3,23 +3,14 @@ import { apiFetch } from "./client"
 
 // auth.ts
 export const login = async (username: string, password: string) => {
-  // Basic validation
   if (!username || !password) {
     throw new Error("Username and password are required")
   }
 
-  // Prepare form data
-  const formData = new URLSearchParams()
-  formData.append("username", username)
-  formData.append("password", password)
-
   try {
     const response = await apiFetch("/auth/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData.toString(),
+      body: JSON.stringify({ username, password })
     })
     
     return response

@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from pydantic import BaseModel
 from langgraph.types import Command
-from database.session import AsyncSessionLocal
+from database.session import AsyncSessionLocal, get_database
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.postgres import save_chapter, save_summary
 from src.graph.main import build_graph
 
 from api.auth.dependencies import get_current_user
 from database.models.user import User
+from sqlalchemy import select
+from database.models.chapter import Project
 router = APIRouter(tags=["Review"])
 
 
@@ -15,7 +18,13 @@ class ResumeRequest(BaseModel):
 
 
 @router.get("/review/{thread_id}")
-async def get_review(thread_id: str, req: Request, user : User = Depends(get_current_user)):
+async def get_review(thread_id: str, req: Request, user : User = Depends(get_current_user), db : AsyncSession = Depends(get_database)):
+    project_id = thread_id.split("-chapter-")[0]
+    statement = select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    db_result = await db.execute(statement)
+    project = db_result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not have access to this thread")
     checkpointer = req.app.state.checkpointer
     config = {"configurable": {"thread_id": thread_id}}
     
@@ -36,7 +45,13 @@ async def get_review(thread_id: str, req: Request, user : User = Depends(get_cur
     raise HTTPException(status_code=400, detail="No interrupt found")
 
 @router.post("/resume/{thread_id}")
-async def resume_pipeline(thread_id: str, body: ResumeRequest, req: Request, user : User = Depends(get_current_user)):
+async def resume_pipeline(thread_id: str, body: ResumeRequest, req: Request, user : User = Depends(get_current_user), db : AsyncSession = Depends(get_database)):
+    project_id = thread_id.split("-chapter-")[0]
+    statement = select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    db_result = await db.execute(statement)
+    project = db_result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not have access to this thread")
     checkpointer = req.app.state.checkpointer
     app = build_graph(checkpointer)
     config = {"configurable": {"thread_id": thread_id}}

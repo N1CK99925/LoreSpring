@@ -46,7 +46,7 @@ export default function Dashboard() {
     }
 
     fetchProjects()
-  }, [])
+  }, [navigate, fetchProjects])
 
   /**
    * Handle new project creation
