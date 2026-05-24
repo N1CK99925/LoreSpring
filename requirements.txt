@@ -50,3 +50,19 @@ psycopg[binary]
 pyjwt
 pwdlib[argon2]
 python-multipart
+
+
+find . -type f \( -name "*.ts" -o -name "*.tsx" \) \
+-not -path "*/node_modules/*" \
+-not -path "*/.git/*" \
+-not -path "*/dist/*" \
+-not -path "*/build/*" \
+-print0 | xargs -0 cat > frontend_code.txt
+
+find . -type f -name "*.py" \
+-not -path "*/__pycache__/*" \
+-not -path "*/.venv/*" \
+-not -path "*/venv/*" \
+-not -path "*/.git/*" \
+-not -path "*/node_modules/*" \
+-print0 | xargs -0 cat > backend_code.txt

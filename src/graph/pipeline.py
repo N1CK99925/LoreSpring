@@ -11,6 +11,7 @@ from src.services.postgres import get_project_summaries, get_or_create_project
 
 
 
+
 async def run_pipeline(request: GenerationRequest ,checkpointer) -> GenerationResponse:
     async with AsyncSessionLocal() as session:
         

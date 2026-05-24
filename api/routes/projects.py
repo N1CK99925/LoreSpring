@@ -10,7 +10,7 @@ router = APIRouter( tags=["Projects"])
 
 @router.post("/projects")
 async def create_project_api(body: CreateProjectRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_database)):
-    project = await create_project(db, user.id, body.title, body.description)
+    project = await create_project(db, user.id, metadata = body.model_dump())
     return {"id": project.id, "title": project.title}
 
 @router.get("/projects")

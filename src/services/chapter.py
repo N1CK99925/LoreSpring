@@ -4,7 +4,7 @@ from database.models.chapter import Chapter,ChapterSummary, Project
 
 async def get_chapters(session: AsyncSession, project_id: str,user_id:int):
     result = await session.execute(
-        select(Chapter).where(Chapter.project_id == project_id, Chapter.user_id == user_id).order_by(Chapter.chapter_number))
+        select(Chapter).join(Project).where(Chapter.project_id == project_id, Project.user_id == user_id).order_by(Chapter.chapter_number))
     chapters = result.scalars().all()
     return chapters
 

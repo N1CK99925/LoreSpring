@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select,delete
 from database.models.chapter import Project
-
+from uuid import uuid4
 async def get_projects(session: AsyncSession,user_id: int):
     result = await session.execute(select(Project).where(Project.user_id == user_id).order_by(Project.created_at.desc()))
     projects = result.scalars().all()
@@ -14,10 +14,25 @@ async def get_project_by_id(session: AsyncSession, project_id: str,user_id: int)
     project = result.scalar_one_or_none()
     return project
 
-async def create_project():
-    pass
-# TODO implemet it after checkeing othe function in get_or _create projkect
+async def create_project(session: AsyncSession, user_id: int, metadata: dict):
+    project = Project(
+        # if using UUID:
+        id=str(uuid4()),
 
+        # if using auto-increment INT → REMOVE id entirely
+
+        user_id=user_id,
+        genre=metadata.get("genre", ""),
+        title=metadata.get("title", ""),
+        tone=metadata.get("tone", ""),
+        style=metadata.get("style", "")
+    )
+
+    session.add(project)
+    await session.commit()
+    await session.refresh(project)
+
+    return project
 
 async def delete_project(session: AsyncSession, project_id:str,user_id:int):
     

@@ -20,3 +20,6 @@ class GenerationRequest(BaseModel):
 class CreateProjectRequest(BaseModel):
     title: str
     description: str
+    genre: str = ""
+    tone: str = ""
+    style: str = ""
