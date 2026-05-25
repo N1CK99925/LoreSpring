@@ -20,7 +20,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-[#080D0A] flex items-center justify-center">
-      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-10 w-90 flex flex-col gap-4">
+      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-10 w-90 flex-col gap-4">
 
         <h1 className="text-[#00A86B] text-3xl font-bold" style={{ fontFamily: 'Fraunces, serif' }}>
           LoreSpring

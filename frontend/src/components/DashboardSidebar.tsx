@@ -32,7 +32,7 @@ export const DashboardSidebar = ({
   const navigate = useNavigate()
 
   return (
-    <div className="w-[220px] bg-[#0F1A12] border-r border-[#1A3320] flex flex-col p-4 gap-3">
+    <div className="w-55 bg-[#0F1A12] border-r border-[#1A3320] flex flex-col p-4 gap-3">
       {/* Logo */}
       <h1
         className="text-[#00A86B] text-xl font-bold mb-2 cursor-pointer hover:opacity-80 transition-opacity"

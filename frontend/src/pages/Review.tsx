@@ -25,19 +25,41 @@ export default function Review() {
   loadReview()
 }, [thread_id])
 
-  const handleDecision = async (approved: boolean) => {
+ const handleDecision = async (approved: boolean) => {
   try {
     setLoading(true)
-    const response = await resume(thread_id!, approved)
-    if (response.status) {
-      const projectId = thread_id!.split('-chapter-')[0]
-      navigate(`/project/${projectId}`)
-    } else {
-      setError("Failed to save decision")
+    const token = localStorage.getItem('token')
+    console.log('Starting resume with approved:', approved)
+    
+    await resume(thread_id!, approved)
+    console.log('Resume returned, starting poll')
+    
+    const checkPipelineComplete = async () => {
+      const response = await fetch(
+        `/review/${thread_id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      console.log('Poll check - status:', response.status)
+      return !response.ok
     }
-  } catch (error: any) {
-    setError(error.message || "Error processing decision")
-  }finally {
+
+    let isComplete = false
+    let pollCount = 0
+    const startTime = Date.now()
+    while (!isComplete && Date.now() - startTime < 300000) {
+      await new Promise(r => setTimeout(r, 2000))
+      isComplete = await checkPipelineComplete()
+      pollCount++
+      console.log(`Poll #${pollCount}: isComplete=${isComplete}`)
+    }
+
+    console.log('Exited poll loop after', pollCount, 'checks')
+    const projectId = thread_id!.split('-chapter-')[0]
+    navigate(`/project/${projectId}`)
+  } catch (err: any) {
+    console.error('Error:', err)
+    setError(err.message || "Error processing decision")
+  } finally {
     setLoading(false)
   }
 }

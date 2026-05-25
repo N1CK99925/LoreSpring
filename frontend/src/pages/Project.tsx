@@ -122,12 +122,14 @@ export default function Project() {
           <>
             <h2 className="text-white text-xl font-semibold mb-4">Chapter {selectedChapter.chapter_number}</h2>
             <p className="text-[#A8C5B0] text-sm leading-relaxed whitespace-pre-wrap">{selectedChapter.final_chapter}</p>
-            <button
-              className="mt-6 border border-[#00A86B] text-[#00A86B] rounded-lg px-4 py-2 text-sm cursor-pointer hover:bg-[#00A86B] hover:text-white transition-all"
-              onClick={() => navigate(`/review/${id}-chapter-${selectedChapter.chapter_number}`)}
-            >
-              Go to Review
-            </button>
+          {selectedChapter && status === 'awaiting_review' && selectedChapter.chapter_number === chapterNumber && (
+  <button
+    className="mt-6 border border-[#00A86B] text-[#00A86B] rounded-lg px-4 py-2 text-sm cursor-pointer hover:bg-[#00A86B] hover:text-white transition-all"
+    onClick={() => navigate(`/review/${id}-chapter-${selectedChapter.chapter_number}`)}
+  >
+    Go to Review
+  </button>
+)}
           </>
         ) : (
           <div className="flex items-center justify-center h-full">

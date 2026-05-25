@@ -61,7 +61,7 @@ export const CreateProjectModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-8 w-100 flex flex-col gap-4">
+      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-8 w-100 flex-col gap-4">
         {/* Header */}
         <h2 className="text-white text-lg font-semibold">Create New Project</h2>
 
