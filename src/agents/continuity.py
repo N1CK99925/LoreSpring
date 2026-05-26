@@ -12,6 +12,8 @@ from langsmith import traceable
 @traceable(name="continuity")
 async def continue_agent_node(state: NarrativeState) -> NarrativeState:
     draft = state.get("draft", "")
+    user_id = state.get("user_id")
+    project_id = state.get("project_id")
 
     previous_chapters_summary = state.get("previous_chapter_summary", [])
     prev_summary_text = "\n\n".join([
@@ -20,6 +22,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
     ]) if previous_chapters_summary else "No prior chapters."
 
     continuity_lore = await query_lore(
+        user_id,project_id,
         """Retrieve all canonical established facts relevant to:
         - Characters appearing in this draft (traits, status, relationships)
         - Timeline of major events so far

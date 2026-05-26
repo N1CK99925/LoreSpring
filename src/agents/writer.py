@@ -21,6 +21,8 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         for s in previous_chapters_summary
     ]) if previous_chapters_summary else "This is the first chapter."
     
+    user_id = state.get("user_id")
+    project_id = state.get("project_id")
     metadata = state.get("metadata", {})
     genre = metadata.get("genre", "fantasy")
     revision_count = state.get("revision_count", 0)
@@ -46,6 +48,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
   
     if revision_count == 0:
         lore_context = await query_lore(
+            user_id,project_id,
             f"""
             Provide all relevant established canonical facts involving:
             - Characters referenced in: {state.get('user_direction')}

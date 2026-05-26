@@ -1,3 +1,4 @@
+// components/DashboardSidebar.tsx
 import { useNavigate } from 'react-router-dom'
 import type { Project } from '../types'
 
@@ -8,21 +9,6 @@ interface DashboardSidebarProps {
   onLogout: () => void
 }
 
-/**
- * DashboardSidebar Component
- * 
- * Left navigation panel with:
- * - Logo
- * - New Project button
- * - Projects list
- * - Logout button
- * 
- * Props:
- * - projects: List of user's projects
- * - loading: Is data loading?
- * - onNewProject: Callback for new project button
- * - onLogout: Callback for logout button
- */
 export const DashboardSidebar = ({
   projects,
   loading,
@@ -32,31 +18,30 @@ export const DashboardSidebar = ({
   const navigate = useNavigate()
 
   return (
-    <div className="w-55 bg-[#0F1A12] border-r border-[#1A3320] flex flex-col p-4 gap-3">
-      {/* Logo */}
-      <h1
-        className="text-[#00A86B] text-xl font-bold mb-2 cursor-pointer hover:opacity-80 transition-opacity"
-        style={{ fontFamily: 'Fraunces, serif' }}
+    <div className="w-[220px] bg-white border-r border-[#c8e6cc] flex flex-col p-5 gap-2.5 flex-shrink-0">
+      <div 
+        className="flex items-center gap-2 text-[#0d8c4a] text-[21px] font-semibold font-serif cursor-pointer hover:opacity-80 transition-opacity mb-1"
         onClick={() => navigate('/dashboard')}
       >
+        <SidebarLogo />
         LoreSpring
-      </h1>
+      </div>
 
-      {/* New Project Button */}
       <button
-        className="bg-[#00A86B] text-white text-sm rounded-lg py-2 cursor-pointer hover:shadow-[0_0_12px_rgba(0,168,107,0.4)] transition-all disabled:opacity-50"
+        className="bg-[#0d8c4a] text-white text-sm rounded-lg py-2.5 px-3.5 cursor-pointer hover:shadow-[0_4px_16px_rgba(13,140,74,0.3)] transition-all disabled:opacity-50 font-medium text-left"
         onClick={onNewProject}
         disabled={loading}
       >
         + New Project
       </button>
 
-      {/* Projects List */}
-      <div className="flex flex-col gap-2 mt-2 flex-1 overflow-y-auto">
+      <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider pt-1.5 pb-0.5">Projects</div>
+
+      <div className="flex flex-col gap-1.5 overflow-y-auto flex-1">
         {loading ? (
-          <p className="text-[#A8C5B0] text-xs">Loading projects...</p>
+          <p className="text-[#6a9e72] text-xs">Loading projects...</p>
         ) : projects.length === 0 ? (
-          <p className="text-[#A8C5B0] text-xs">No projects yet</p>
+          <p className="text-[#6a9e72] text-xs">No projects yet</p>
         ) : (
           projects.map(project => (
             <ProjectListItem
@@ -68,33 +53,40 @@ export const DashboardSidebar = ({
         )}
       </div>
 
-      {/* Logout Button */}
-      <button
-        onClick={onLogout}
-        className="text-xs text-[#A8C5B0] hover:text-red-400 cursor-pointer transition-colors"
-      >
-        Logout
-      </button>
+      <div className="mt-auto">
+        <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider mb-1.5">Tools</div>
+        <div 
+          className="bg-transparent border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#3d6b48] text-xs cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all mb-2"
+          onClick={() => navigate('/graph')}
+        >
+          ⬡ Narrative Graph
+        </div>
+        <button
+          onClick={onLogout}
+          className="bg-transparent border-none text-[#6a9e72] text-xs cursor-pointer hover:text-red-500 transition-colors p-1 text-left"
+        >
+          Sign out
+        </button>
+      </div>
     </div>
   )
 }
 
-/**
- * ProjectListItem Component
- * Single clickable project in sidebar
- */
-interface ProjectListItemProps {
-  project: Project
-  onClick: () => void
-}
-
-const ProjectListItem = ({ project, onClick }: ProjectListItemProps) => {
+const ProjectListItem = ({ project, onClick }: { project: Project; onClick: () => void }) => {
   return (
     <div
       onClick={onClick}
-      className="bg-[#080D0A] border border-[#1A3320] rounded-lg px-3 py-2 text-[#A8C5B0] text-sm cursor-pointer hover:border-[#00A86B] transition-colors"
+      className="bg-transparent border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#3d6b48] text-xs cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all"
     >
       {project.title}
     </div>
   )
 }
+
+const SidebarLogo = () => (
+  <svg width="22" height="22" viewBox="0 0 30 30" fill="none">
+    <path d="M15 3L20 10L27 8L23 15L29 17L22 20L25 27L15 22L5 27L8 20L1 17L7 15L3 8L10 10Z" fill="#22c9a0" opacity="0.85"/>
+    <path d="M15 15L13 26L15 28L17 26Z" fill="#0d8c4a"/>
+    <ellipse cx="15" cy="12" rx="4" ry="4" fill="#b8f0e0" opacity="0.9"/>
+  </svg>
+)

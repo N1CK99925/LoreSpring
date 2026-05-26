@@ -5,7 +5,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 
 from config.settings import settings
-from api.routes import health, generate, review , auth,chapters,projects
+from api.routes import health, generate, review , auth,chapters,projects, graph_viz
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -36,5 +36,7 @@ app.include_router(review.router)
 app.include_router(auth.router)
 app.include_router(chapters.router)
 app.include_router(projects.router)
+app.include_router(graph_viz.router)
+
 
 

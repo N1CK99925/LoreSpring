@@ -8,11 +8,16 @@ async def get_chapters(session: AsyncSession, project_id: str,user_id:int):
     chapters = result.scalars().all()
     return chapters
 
-async def get_chapter_summary(session:AsyncSession,project_id: str, chapter_id: int):
+async def get_chapter_summary(session:AsyncSession, project_id: str, chapter_id: int, user_id: int):
     result = await session.execute(
         select(ChapterSummary)
-        .join(Chapter,ChapterSummary.chapter_id == Chapter.id)
-        .where(Chapter.project_id == project_id, Chapter.id == chapter_id)
+        .join(Chapter, ChapterSummary.chapter_id == Chapter.id)
+        .join(Project, Chapter.project_id == Project.id)  
+        .where(
+            Chapter.project_id == project_id, 
+            Chapter.id == chapter_id,
+            Project.user_id == user_id  
+        )
     )
     result = result.scalar_one_or_none()
     return result

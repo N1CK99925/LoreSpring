@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Project from './pages/Project'
 import Review from './pages/Review'
+import GraphPage from './pages/GraphPage'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project/:id" element={<Project />} />
         <Route path="/review/:thread_id" element={<Review />} />
+        <Route path="/graph" element={<GraphPage />} />
       </Routes>
     </BrowserRouter>
   )

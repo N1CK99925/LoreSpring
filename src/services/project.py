@@ -40,5 +40,7 @@ async def delete_project(session: AsyncSession, project_id:str,user_id:int):
     if result.rowcount == 0:
         raise ValueError("Project not found")
     await session.commit()
+    from src.memory.lightrag import delete_project_rag
+    await delete_project_rag(user_id, project_id)
     
     

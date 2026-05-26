@@ -19,8 +19,10 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
     if not draft:
         return state
-
+    user_id = state.get("user_id")
+    project_id = state.get("project_id")
     lore_context = await query_lore(
+        user_id,project_id,
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
         mode="hybrid"
     )

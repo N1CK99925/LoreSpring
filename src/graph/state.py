@@ -5,7 +5,7 @@ from src.schemas.summarizer import SummarizerResult
 from typing import Any, TypedDict,  List, Dict
 
 class NarrativeState(TypedDict,total= False):
-    
+    user_id: int
     project_id: str
     chapter_number: int
     user_direction: str

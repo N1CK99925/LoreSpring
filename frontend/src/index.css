@@ -1,1 +1,24 @@
 @import "tailwindcss";
+/* index.css - Add to your existing Tailwind imports */
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  
+  .font-serif {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+}
+
+@layer components {
+  .animate-pulse {
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

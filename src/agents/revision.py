@@ -17,11 +17,13 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     revision_count = state.get("revision_count", 0)
     chapter_number = state.get("chapter_number")
     user_direction = state.get("user_direction", "")
-
+    user_id = state.get("user_id")
+    project_id = state.get("project_id")
     if not draft_current:
         return state
 
     lore_context = await query_lore(
+        user_id,project_id,
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
         mode="hybrid"
     )

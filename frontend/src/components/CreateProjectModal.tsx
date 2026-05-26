@@ -60,10 +60,10 @@ export const CreateProjectModal = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-[#0F1A12] border border-[#1A3320] rounded-xl p-8 w-100 flex-col gap-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-white border border-[#c8e6cc] rounded-xl p-8 w-107.5 shadow-xl">
         {/* Header */}
-        <h2 className="text-white text-lg font-semibold">Create New Project</h2>
+        <h2 className="font-serif text-[21px] font-normal text-[#1a3320] mb-4">New Project</h2>
 
         {/* Error */}
         {error && (
@@ -87,6 +87,7 @@ export const CreateProjectModal = ({
                 value={title}
                 onChange={e => onTitleChange(e.target.value)}
                 disabled={loading}
+                className="w-full bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-4 py-2.5 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all disabled:opacity-50"
               />
             }
           />
@@ -100,7 +101,8 @@ export const CreateProjectModal = ({
                 value={description}
                 onChange={e => onDescriptionChange(e.target.value)}
                 disabled={loading}
-                className="resize-none h-20"
+                rows={2}
+                className="w-full bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-4 py-2.5 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all resize-none disabled:opacity-50"
               />
             }
           />
@@ -114,6 +116,7 @@ export const CreateProjectModal = ({
                 value={genre}
                 onChange={e => onGenreChange(e.target.value)}
                 disabled={loading}
+                className="w-full bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-4 py-2.5 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all disabled:opacity-50"
               >
                 <option value="">Select genre...</option>
                 <option value="fantasy">Fantasy</option>
@@ -137,6 +140,7 @@ export const CreateProjectModal = ({
                 value={tone}
                 onChange={e => onToneChange(e.target.value)}
                 disabled={loading}
+                className="w-full bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-4 py-2.5 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all disabled:opacity-50"
               >
                 <option value="">Select tone...</option>
                 <option value="dark">Dark</option>
@@ -159,6 +163,7 @@ export const CreateProjectModal = ({
                 value={style}
                 onChange={e => onStyleChange(e.target.value)}
                 disabled={loading}
+                className="w-full bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-4 py-2.5 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all disabled:opacity-50"
               >
                 <option value="">Select style...</option>
                 <option value="first-person">First Person</option>
@@ -176,14 +181,14 @@ export const CreateProjectModal = ({
           <div className="flex gap-3 mt-2">
             <button
               type="submit"
-              className="flex-1 bg-[#00A86B] text-white rounded-lg py-2 text-sm cursor-pointer hover:shadow-[0_0_12px_rgba(0,168,107,0.4)] transition-all disabled:opacity-50 font-semibold"
+              className="flex-1 bg-[#0d8c4a] text-white rounded-lg py-2.5 text-sm font-medium cursor-pointer hover:shadow-[0_4px_16px_rgba(13,140,74,0.3)] transition-all disabled:opacity-50"
               disabled={loading}
             >
               {loading ? 'Creating...' : 'Create Project'}
             </button>
             <button
               type="button"
-              className="flex-1 border border-[#1A3320] text-[#A8C5B0] rounded-lg py-2 text-sm cursor-pointer hover:border-[#00A86B] transition-colors disabled:opacity-50"
+              className="flex-1 border border-[#c8e6cc] text-[#3d6b48] rounded-lg py-2.5 text-sm cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-colors disabled:opacity-50"
               onClick={onClose}
               disabled={loading}
             >
@@ -191,7 +196,7 @@ export const CreateProjectModal = ({
             </button>
           </div>
 
-          <p className="text-[#A8C5B0] text-xs mt-2">* Required fields</p>
+          <p className="text-[#6a9e72] text-xs mt-2">* Required fields</p>
         </form>
       </div>
     </div>
@@ -210,13 +215,11 @@ interface FormFieldProps {
 
 const FormField = ({ label, required, input }: FormFieldProps) => {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[#A8C5B0] text-xs font-semibold">
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[#3d6b48] text-xs font-medium">
         {label} {required && '*'}
       </label>
-      <div className="[&>input], [&>select], [&>textarea] { bg-[#080D0A] border border-[#1A3320] rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-[#00A86B] disabled:opacity-50 }">
-        {input}
-      </div>
+      {input}
     </div>
   )
 }

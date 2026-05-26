@@ -1,6 +1,7 @@
 
 from database.session import  AsyncSessionLocal
 
+from src.services.project import get_project_by_id
 from src.graph.main import build_graph
 from src.schemas.api.generation_request import GenerationRequest
 from src.schemas.api.generation_response import GenerationResponse
@@ -12,18 +13,18 @@ from src.services.postgres import get_project_summaries, get_or_create_project
 
 
 
-async def run_pipeline(request: GenerationRequest ,checkpointer) -> GenerationResponse:
+async def run_pipeline(request: GenerationRequest ,checkpointer,user_id: int) -> GenerationResponse:
     async with AsyncSessionLocal() as session:
         
-        previous_memory = await get_project_summaries(session, request.project_id)
+        project = await get_project_by_id(session, request.project_id, user_id)
+        if not project:
+            raise ValueError(f"Project {request.project_id} not found or not owned by user {user_id}")
+        
+        previous_memory = await get_project_summaries(session, request.project_id, user_id)
         app = build_graph(checkpointer)
         
-        
-        await get_or_create_project(session, request.project_id, request.metadata.model_dump())
-        
-    
-    
         initial_state = {
+            "user_id": user_id,  # ← ADD THIS
             "project_id": request.project_id,
             "chapter_number": request.chapter_number,
             "user_direction": request.user_direction,
@@ -40,17 +41,17 @@ async def run_pipeline(request: GenerationRequest ,checkpointer) -> GenerationRe
             "final_chapter": "",
             "should_revise": False
         }
-    
+        
         config = {"configurable": {"thread_id": f"{request.project_id}-chapter-{request.chapter_number}"}}
-        print(f"Starting pipeline for project {request.project_id}, chapter {request.chapter_number}")
-    
-        result = await app.ainvoke(initial_state,config=config)
+        print(f"Starting pipeline for user {user_id}, project {request.project_id}, chapter {request.chapter_number}")
+        
+        result = await app.ainvoke(initial_state, config=config)
     
        
       
         
         
-    print(result)
+    
     return GenerationResponse(
         final_chapter=result.get("final_chapter", ""),
         revision_count=result.get("revision_count", 0),

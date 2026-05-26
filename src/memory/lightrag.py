@@ -1,6 +1,5 @@
 import asyncio
 import os
-# TODO: delete graph memory and rebuild in mid function
 from lightrag import LightRAG, QueryParam
 from lightrag.llm.openai import openai_complete_if_cache
 from lightrag.utils import EmbeddingFunc
@@ -27,9 +26,7 @@ async def groq_llm_func(
     )
 
 
-
-
-async def initialize_rag(working_dir: str = "./lore_db") -> LightRAG:
+async def initialize_rag(working_dir: str) -> LightRAG:
     os.makedirs(working_dir, exist_ok=True)
     
     rag = LightRAG(
@@ -40,7 +37,6 @@ async def initialize_rag(working_dir: str = "./lore_db") -> LightRAG:
         embedding_func=EmbeddingFunc(
             embedding_dim=384, 
             max_token_size=512,
-            
             func=embed_func
         )
     )
@@ -50,32 +46,57 @@ async def initialize_rag(working_dir: str = "./lore_db") -> LightRAG:
     return rag
 
 
-_rag_instance = None
-_rag_lock = asyncio.Lock()
+_rag_cache: dict[tuple[int, str], LightRAG] = {} 
+_rag_locks: dict[tuple[int, str], asyncio.Lock] = {}  
 
-async def get_rag() -> LightRAG:
-    global _rag_instance
-    if _rag_instance is None:
-        async with _rag_lock:
-            if _rag_instance is None: 
-                _rag_instance = await initialize_rag()
-    return _rag_instance
+async def get_project_rag(user_id: int, project_id: str) -> LightRAG:
+    key = (user_id, project_id)
 
-async def insert_chapter(draft: str, chapter_number: int):
-    rag = await get_rag()
+    if key in _rag_cache:
+        return _rag_cache[key]
+
+    if key not in _rag_locks:
+        _rag_locks[key] = asyncio.Lock()
+    
+    async with _rag_locks[key]:
+        
+        if key in _rag_cache:
+            return _rag_cache[key]
+        
+        working_dir = f"./lore_db/{user_id}/{project_id}"
+        rag_instance = await initialize_rag(working_dir)
+        _rag_cache[key] = rag_instance
+        
+        print(f"RAG initialized for user {user_id}, project {project_id}")
+        return rag_instance
+
+
+async def insert_chapter(user_id: int, project_id: str, draft: str, chapter_number: int):
+    rag = await get_project_rag(user_id, project_id)
     await rag.ainsert(f"Chapter {chapter_number}:\n{draft}")
-    print(f"lore memory: chapter {chapter_number} inserted")
+    print(f"lore memory: user {user_id}, project {project_id}, chapter {chapter_number} inserted")
 
-async def query_lore(query: str, mode: str = "hybrid") -> str:
-    rag = await get_rag()
+
+async def query_lore(user_id: int, project_id: str, query: str, mode: str = "hybrid") -> str:
+    rag = await get_project_rag(user_id, project_id)
     return await rag.aquery(query, param=QueryParam(mode=mode))
 
-def visualize_graph(working_dir: str = "./lore_db"):
-    import networkx as nx
-    from pyvis.network import Network
+
+def cleanup_project_rag(user_id: int, project_id: str):
+
+    key = (user_id, project_id)
+    _rag_cache.pop(key, None)
+    _rag_locks.pop(key, None)
+    print(f"RAG cache cleared for user {user_id}, project {project_id}")
+
+
+
+async def delete_project_rag(user_id: int, project_id: str):
+    import shutil
     
-    G = nx.read_graphml(f"{working_dir}/graph_chunk_entity_relation.graphml")
-    net = Network(height="100vh", notebook=False)
-    net.from_nx(G)
-    net.show("lore_graph.html")
-    print("graph saved to lore_graph.html")
+    cleanup_project_rag(user_id, project_id)
+    
+    working_dir = f"./lore_db/{user_id}/{project_id}"
+    if os.path.exists(working_dir):
+        shutil.rmtree(working_dir, ignore_errors=True)
+        print(f"RAG working directory deleted: {working_dir}")
