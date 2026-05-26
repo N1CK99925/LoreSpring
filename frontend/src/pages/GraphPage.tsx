@@ -1,7 +1,8 @@
 // pages/GraphPage.tsx
 import { useEffect, useMemo, useState } from "react"
 import ForceGraph2D from "react-force-graph-2d"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { apiFetch } from "../api/client"
 
 type GraphNode = {
   id: string
@@ -36,22 +37,39 @@ const ENTITY_COLORS: Record<string, string> = {
 
 export default function GraphPage() {
   const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
   const [graphData, setGraphData] = useState<GraphData>({
     nodes: [],
     links: [],
   })
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("http://localhost:8000/graph")
-      .then((res) => res.json())
-      .then((data: GraphData) => {
+    if (!projectId) {
+      setError("Project ID not found. Please navigate from the dashboard.")
+      setLoading(false)
+      return
+    }
+
+    const fetchGraph = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await apiFetch(`/graph?project_id=${encodeURIComponent(projectId)}`)
         setGraphData(data)
-      })
-      .catch((err) => {
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to load graph"
         console.error("Graph fetch failed:", err)
-      })
-  }, [])
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchGraph()
+  }, [projectId])
 
   const processedData = useMemo<GraphData>(() => {
     return {
@@ -143,6 +161,28 @@ export default function GraphPage() {
 
       {/* GRAPH */}
       <div className="flex-1 relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#f7faf7] z-10">
+            <div className="text-center">
+              <div className="text-[#6a9e72] mb-4">Loading graph...</div>
+              <div className="inline-block w-8 h-8 border-4 border-[#c8e6cc] border-t-[#22c9a0] rounded-full animate-spin"></div>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#f7faf7] z-10">
+            <div className="text-center max-w-sm">
+              <div className="text-red-500 text-lg mb-2">Error Loading Graph</div>
+              <div className="text-[#6a9e72] text-sm mb-4">{error}</div>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="bg-[#22c9a0] text-white px-4 py-2 rounded text-sm hover:bg-[#1a9d7c] transition-colors"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        )}
         <ForceGraph2D
           graphData={processedData}
           backgroundColor="#f7faf7"

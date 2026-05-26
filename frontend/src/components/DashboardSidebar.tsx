@@ -54,13 +54,6 @@ export const DashboardSidebar = ({
       </div>
 
       <div className="mt-auto">
-        <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider mb-1.5">Tools</div>
-        <div 
-          className="bg-transparent border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#3d6b48] text-xs cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all mb-2"
-          onClick={() => navigate('/graph')}
-        >
-          ⬡ Narrative Graph
-        </div>
         <button
           onClick={onLogout}
           className="bg-transparent border-none text-[#6a9e72] text-xs cursor-pointer hover:text-red-500 transition-colors p-1 text-left"

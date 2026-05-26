@@ -16,7 +16,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project/:id" element={<Project />} />
         <Route path="/review/:thread_id" element={<Review />} />
-        <Route path="/graph" element={<GraphPage />} />
+        <Route path="/graph/:projectId" element={<GraphPage />} />
       </Routes>
     </BrowserRouter>
   )

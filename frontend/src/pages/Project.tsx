@@ -117,7 +117,7 @@ export default function Project() {
         </button>
         <button 
           className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all"
-          onClick={() => navigate('/graph')}
+          onClick={() => navigate(`/graph/${id}`)}
         >
           ⬡ Graph
         </button>
@@ -148,7 +148,7 @@ export default function Project() {
           <div className="mt-auto pt-4">
             <div 
               className="border border-[#c8e6cc] rounded-lg px-3 py-2 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all mb-2"
-              onClick={() => navigate('/graph')}
+              onClick={() => navigate(`/graph/${id}`)}
             >
               ⬡ Story graph
             </div>
