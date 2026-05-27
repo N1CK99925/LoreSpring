@@ -44,3 +44,5 @@ class NarrativeState(TypedDict,total= False):
     
     
     human_approved: bool
+    
+    revised_chapter_text: str

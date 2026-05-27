@@ -20,21 +20,33 @@ export default function Project() {
   const [chapterNumber, setChapterNumber] = useState(1)
   const [qualityThreshold, setQualityThreshold] = useState(7.0)
   const [maxRevisions, setMaxRevisions] = useState(2)
+  const [loadingChapters, setLoadingChapters] = useState(false)
+
+  // Refetch chapters function
+  const loadChapters = async (projectId: string) => {
+    try {
+      setLoadingChapters(true)
+      const chaps = await getChapters(projectId)
+      setChapters(chaps)
+      // Auto-select the most recent chapter
+      if (chaps.length > 0) {
+        setSelectedChapter(chaps[chaps.length - 1])
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load chapters")
+    } finally {
+      setLoadingChapters(false)
+    }
+  }
 
   useEffect(() => {
     if (!id) return
     
     const loadData = async () => {
       try {
-        const [proj, chaps] = await Promise.all([
-          getProject(id),
-          getChapters(id)
-        ])
+        const proj = await getProject(id)
         setProject(proj)
-        setChapters(chaps)
-        if (chaps.length > 0 && !selectedChapter) {
-          setSelectedChapter(chaps[chaps.length - 1])
-        }
+        await loadChapters(id)
       } catch (err: any) {
         setError(err.message || "Failed to load project")
       }
@@ -77,7 +89,10 @@ export default function Project() {
         qualityThreshold,
         maxRevisions
       )
+      // Refetch chapters to get the newly generated one
+      await loadChapters(id)
       setStatus('awaiting_review')
+      setDirection('')
       const threadId = `${id}-chapter-${chapterNumber}`
       navigate(`/review/${threadId}`)
     } catch (err: any) {
@@ -109,10 +124,10 @@ export default function Project() {
         <button className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all bg-[#eef6ef] border-[#8ec99a] text-[#0d8c4a]">
           ✦ Write
         </button>
-        <button className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all">
+        <button disabled className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#c8e6cc] cursor-not-allowed opacity-50">
           ↺ Rewrite
         </button>
-        <button className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all">
+        <button disabled className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#c8e6cc] cursor-not-allowed opacity-50">
           ◎ Describe
         </button>
         <button 
@@ -163,7 +178,11 @@ export default function Project() {
 
         {/* Main content - Chapter text */}
         <div className="flex-1 overflow-y-auto p-8">
-          {selectedChapter ? (
+          {loadingChapters ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-[#6a9e72] text-sm">Loading chapters...</p>
+            </div>
+          ) : selectedChapter ? (
             <>
               <h2 className="font-serif text-2xl font-light text-[#1a3320] mb-2">
                 Chapter {selectedChapter.chapter_number}
@@ -172,12 +191,12 @@ export default function Project() {
                 <span className="text-[#22c9a0]">◆</span> Quality score: {selectedChapter.quality_score}
               </div>
               <p className="text-[#3d6b48] text-sm leading-relaxed whitespace-pre-wrap font-serif font-light tracking-wide">
-                {selectedChapter.final_chapter}
+                {selectedChapter.final_chapter || "Chapter not yet generated"}
               </p>
               {status === 'awaiting_review' && selectedChapter.chapter_number === chapterNumber && (
                 <button
                   className="mt-6 border border-[#0d8c4a] text-[#0d8c4a] rounded-lg px-4 py-2 text-sm cursor-pointer hover:bg-[#0d8c4a] hover:text-white transition-all"
-                  onClick={() => navigate(`/review/${id}-chapter-${selectedChapter.chapter_number}`)}
+                  onClick={() => navigate(`/review/${id}-chapter-${chapterNumber}`)}
                 >
                   Go to Review →
                 </button>
@@ -191,7 +210,7 @@ export default function Project() {
         </div>
 
         {/* Right panel - Generation Console */}
-        <div className="w-[280px] bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 flex-shrink-0 overflow-y-auto">
+        <div className="w-70 bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 flex-shrink-0 overflow-y-auto">
           <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Generation Console</div>
 
           <div className="flex flex-col gap-1">
@@ -223,6 +242,8 @@ export default function Project() {
               <input
                 type="number"
                 step="0.5"
+                min="0"
+                max="10"
                 className="bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all"
                 value={qualityThreshold}
                 onChange={e => setQualityThreshold(Number(e.target.value))}

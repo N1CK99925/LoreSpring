@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/Dashboard.tsx
 import { useState, useEffect } from 'react'
@@ -58,6 +59,7 @@ export default function Dashboard() {
   }
 
   // Calculate stats
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const totalChapters = projects.reduce((sum, p) => sum + (p as any).chapter_count || 0, 0)
   const totalWords = projects.reduce((sum, p) => sum + (p as any).word_count || 0, 0)
 
@@ -96,7 +98,7 @@ export default function Dashboard() {
           ))}
           <button
             onClick={handleOpenModal}
-            className="bg-white border border-dashed border-[#c8e6cc] rounded-2xl p-5 min-h-[130px] flex flex-col items-center justify-center gap-2 text-[#6a9e72] text-sm hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all cursor-pointer"
+            className="bg-white border border-dashed border-[#c8e6cc] rounded-2xl p-5 min-h-32.5 flex flex-col items-center justify-center gap-2 text-[#6a9e72] text-sm hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all cursor-pointer"
           >
             <span className="text-2xl text-[#8ec99a]">+</span>
             New project
@@ -104,8 +106,8 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-4 gap-3 mt-8">
-          <StatCard label="Total chapters" value={totalChapters.toString()} />
-          <StatCard label="Words written" value={totalWords.toLocaleString()} />
+          {/* <StatCard label="Total chapters" value={totalChapters.toString()} /> */}
+          {/* <StatCard label="Words written" value={totalWords.toLocaleString()} /> */}
           <StatCard label="Projects" value={projects.length.toString()} />
           <StatCard label="Active" value={projects.filter(p => (p as any).status !== 'completed').length.toString()} />
         </div>
@@ -144,7 +146,8 @@ const ProjectCard = ({ project, onClick }: { project: any; onClick: () => void }
     <div className="font-serif text-base font-normal text-[#1a3320] mb-1">{project.title}</div>
     <div className="text-[#6a9e72] text-xs">{project.genre} · {project.tone}</div>
     <div className="text-[#6a9e72] text-xs mt-1">
-      {(project as any).chapter_count || 0} chapters
+      {/* {(project as any).chapter_count || 0} idk ill add this later chapters */}
+      {/* TODO */}
     </div>
     <span className="inline-block bg-[#d4f5ed] border border-[#22c9a0]/30 rounded-full px-2 py-0.5 text-[10px] text-[#0d8c6a] mt-2">
       Active

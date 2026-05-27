@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 from langgraph.types import Command
 from database.session import AsyncSessionLocal, get_database
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ router = APIRouter(tags=["Review"])
 
 class ResumeRequest(BaseModel):
     approved: bool
+    revised_chapter_text: Optional[str] = Field(None, alias="chapterText")
 
 
 @router.get("/review/{thread_id}")
@@ -57,11 +59,13 @@ async def resume_pipeline(thread_id: str, body: ResumeRequest, req: Request, use
     config = {"configurable": {"thread_id": thread_id}}
 
     result = await app.ainvoke(
-        Command(resume={"approved": body.approved}),
+        Command(resume={"approved": body.approved, "revised_chapter_text": body.revised_chapter_text}),
         config=config
     )
-
+    print("DEBUG: Pipeline resumed with result:")
+    print(result)
     if body.approved:
+        
         async with AsyncSessionLocal() as session:
             chapter = await save_chapter(
                 session,

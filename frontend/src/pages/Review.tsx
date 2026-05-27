@@ -12,6 +12,7 @@ export default function Review() {
   const [reviewData, setReviewData] = useState<any>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [chapterText,setChapterText] = useState("")
 
   useEffect(() => {
     if (!thread_id) return
@@ -26,12 +27,18 @@ export default function Review() {
     loadReview()
   }, [thread_id])
 
+  useEffect(() => {
+  if (reviewData?.final_chapter) {
+    setChapterText(reviewData.final_chapter)
+  }
+}, [reviewData])
+
   const handleDecision = async (approved: boolean) => {
     try {
       setLoading(true)
       setError("")
       
-      await resume(thread_id!, approved)
+      await resume(thread_id!, approved,chapterText)
       
       const MAX_RETRIES = 90
       const MAX_DELAY_MS = 30000
@@ -101,7 +108,7 @@ export default function Review() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-[195px] bg-white border-r border-[#c8e6cc] flex flex-col p-4 gap-3 flex-shrink-0">
+        <div className="w-48.75 bg-white border-r border-[#c8e6cc] flex flex-col p-4 gap-3 shrink-0">
           <div className="flex items-center gap-2 text-[#0d8c4a] text-lg font-semibold font-serif cursor-pointer" onClick={() => navigate('/dashboard')}>
             <svg width="18" height="18" viewBox="0 0 30 30" fill="none">
               <path d="M15 3L20 10L27 8L23 15L29 17L22 20L25 27L15 22L5 27L8 20L1 17L7 15L3 8L10 10Z" fill="#22c9a0" opacity="0.85"/>
@@ -141,9 +148,13 @@ export default function Review() {
           
           {reviewData ? (
             <>
-              <p className="text-[#3d6b48] text-sm leading-relaxed whitespace-pre-wrap font-serif font-light tracking-wide mb-4">
-                {reviewData.final_chapter}
-              </p>
+              <textarea 
+                 value={chapterText}
+                  onChange={(e) => setChapterText(e.target.value)}
+                  className="w-full h-96 text-[#3d6b48] text-sm leading-relaxed whitespace-pre-wrap font-serif font-light tracking-wide mb-4 p-3 border border-[#c8e6cc] rounded"
+/>
+                
+              
               {reviewData.chapter_summary && (
                 <div className="mt-4 pt-4 border-t border-[#c8e6cc]">
                   <div className="text-[#6a9e72] text-[10px] uppercase mb-1">Chapter Summary</div>
@@ -157,7 +168,7 @@ export default function Review() {
         </div>
 
         {/* Right panel - Review Decision */}
-        <div className="w-[280px] bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 flex-shrink-0 overflow-y-auto">
+        <div className="w-70 bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 shrink-0 overflow-y-auto">
           <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Review Decision</div>
           <p className="text-[#3d6b48] text-xs leading-relaxed">Approve to save this chapter, or reject to regenerate.</p>
           
@@ -187,7 +198,7 @@ export default function Review() {
                       <div className="text-[#6a9e72] text-[10px] uppercase">{key}</div>
                       <div className="h-1 bg-[#eef6ef] rounded-full overflow-hidden mt-1 mb-1">
                         <div 
-                          className="h-full rounded-full bg-gradient-to-r from-[#0d8c4a] to-[#22c9a0]"
+                          className="h-full rounded-full bg-linear-to-r from-[#0d8c4a] to-[#22c9a0]"
                           style={{ width: getScoreWidth(typeof value === 'number' ? value : 0) }}
                         />
                       </div>

@@ -1,341 +1,166 @@
-# LoreSpring
+# 🌿 LoreSpring
 
-
-A Multi-Agent System with Lore-Aware Memory for Maintaining Long-Term Coherence in Narrative Generation.
+Multi-Agent narrative generation with lore memory and human review loop.
 
 ## Overview
 
-LoreSpring is a narrative generation system that uses multiple AI agents in a coordinated graph-based workflow to create coherent stories. The system maintains lore consistency through a local knowledge graph and employs specialized agents for writing, revision, continuity checking, summarization, and lore management.
+AI-powered story generation platform with FastAPI backend, React frontend, and LangGraph orchestration. Maintains narrative consistency across chapters using knowledge graphs and specialized agents.
 
-## Key Features
+## Features
 
-- **Multi-Agent Architecture**: Specialized agents handle different aspects of narrative generation
-- **Lore-Aware Memory**: Local knowledge graph system for maintaining consistency across chapters
-- **Iterative Refinement**: Built-in revision cycles with continuity and quality checks
-- **Graph-Based Workflow**: LangGraph orchestration for agent coordination
-- **Local Storage**: JSON-based persistence for lore and chapter data
+- Multi-agent orchestration (Writer, Revision, Continuity, Summarizer, Lore Keeper, Human Review)
+- Knowledge graph with GraphML + vector embeddings
+- Iterative refinement with quality scoring
+- PostgreSQL checkpointing for state resumption
+- JWT authentication with project isolation
+- React UI with graph visualization
+- Human-in-the-loop approval workflow
 
-## Architecture
+---
+
+## 🏗️ Architecture
 
 ```
-lore-spring/
-├── api/                 # FastAPI application
-│   ├── main.py         # FastAPI app initialization
-│   ├── websocket.py    # WebSocket handlers
-│   └── routes/         # API endpoints
-│       ├── generate.py # Chapter generation endpoints
-│       ├── health.py   # Health check endpoints
-│       └── review.py   # Review and revision endpoints
-├── auth/                # Authentication & security
-│   └── hashing.py      # Password hashing utilities
-├── database/            # Database management
-│   ├── base.py         # SQLAlchemy declarative base
-│   ├── session.py      # Database session management
-│   └── models/         # ORM models
-│       └── chapter.py  # Chapter model
-├── src/
-│   ├── agents/          # Agent implementations
-│   │   ├── writer.py    # Initial draft generation
-│   │   ├── revision.py  # Content revision and quality assessment
-│   │   ├── continuity.py # Lore consistency validation
-│   │   ├── summarizer.py # Chapter summarization
-│   │   ├── lore_keeper.py # Lore database updates
-│   │   ├── quality.py   # Quality assessment
-│   │   ├── human_review.py # Human review workflow
-│   │   └── utils.py     # Shared utilities
-│   ├── graph/           # Workflow orchestration
-│   │   ├── state.py     # NarrativeState definition
-│   │   ├── main.py      # StateGraph setup and compilation
-│   │   ├── pipeline.py  # Graph pipeline management
-│   │   └── subgraphs.py # Subgraph implementations
-│   ├── memory/          # Memory management
-│   │   ├── lightrag.py  # LightRAG integration
-│   │   └── embedding.py # Sentence transformer embeddings
-│   ├── schemas/         # Data models
-│   │   ├── lore.py      # Lore data structures
-│   │   ├── continuity.py # Continuity check results
-│   │   ├── revision.py  # Revision feedback
-│   │   ├── summarizer.py # Summary formats
-│   │   └── api/         # API schemas
-│   │       ├── generation_request.py
-│   │       └── generation_response.py
-│   ├── services/        # External service integrations
-│   │   ├── neo4j.py     # Neo4j graph database
-│   │   ├── pinecone.py  # Pinecone vector store
-│   │   └── postgres.py  # PostgreSQL database
-│   └── llm/             # Language model interfaces
-│       ├── groq_client.py # Groq API client
-│       └── prompts.py   # Prompt templates
-├── config/              # Configuration management
-│   └── settings.py      # Pydantic settings
-├── alembic/             # Database migrations
-│   ├── env.py           # Migration environment setup
-│   ├── versions/        # Migration scripts
-│   │   ├── 66dd3f3870f4_init.py # Initial schema
-│   │   └── 407d26302ee2_timezone_fix.py # Timezone updates
-│   └── script.py.mako   # Migration template
-├── lore_db/             # Local knowledge graph storage
-│   ├── *.json          # Key-value stores
-│   ├── *.graphml       # Graph structure
-│   └── vdb_*.json      # Vector databases
-├── alembic.ini         # Alembic configuration
-├── memory.json         # Chapter memory store
-├── requirements.txt    # Python dependencies
-├── Dockerfile          # Container deployment
-└── README.md           # This file
+Backend (FastAPI + LangGraph)     Frontend (React + TS)       Storage
+├── api/routes/                    ├── pages/                ├── PostgreSQL
+│   ├── auth.py                   │   ├── Login.tsx         ├── lore_db/
+│   ├── projects.py               │   ├── Dashboard.tsx     │   └── GraphML
+│   ├── chapters.py               │   ├── Project.tsx       └── Vector DB
+│   ├── generate.py               │   ├── GraphPage.tsx
+│   ├── review.py                 │   └── Review.tsx
+│   └── graph_viz.py              ├── api/
+├── src/agents/                   ├── components/
+│   ├── writer.py                 └── hooks/
+│   ├── revision.py
+│   ├── continuity.py
+│   ├── summarizer.py
+│   ├── lore_keeper.py
+│   └── human_review.py
+└── src/graph/
+    ├── main.py
+    └── pipeline.py
 ```
 
-## Agents
+---
 
-### Writer Agent
-Generates initial narrative drafts based on:
-- Previous chapter summaries
-- User direction and metadata
-- Lore context from knowledge graph
-- Revision feedback and continuity issues
+## 🤖 Agents
 
-### Revision Agent
-Reviews drafts for:
-- Plot coherence and pacing
-- Character development
-- Prose clarity and style
-- Prompt adherence
-- Provides quality scores (0-10) across multiple dimensions
+**Writer** - Generates drafts from user direction + lore context
+**Revision** - Assesses quality and proposes improvements
+**Continuity** - Validates lore consistency and detects conflicts
+**Summarizer** - Creates chapter summaries for context
+**Human Review** - Interrupt for user approval/rejection
+**Lore Keeper** - Updates knowledge graph with new entities
 
-### Continuity Agent
-Validates lore consistency by checking:
-- Character traits and relationships
-- Location descriptions and rules
-- Object properties and holders
-- Timeline coherence against established facts
+---
 
-### Summarizer Agent
-Creates structured chapter summaries including:
-- Key events and plot progression
-- Character developments and updates
-- Lore changes and new information
+## 🔄 Pipeline Flow
 
-### Lore Keeper Agent
-Updates the knowledge graph with new information from completed chapters:
-- Inserts chapter content into LightRAG
-- Maintains evolving lore database
+```
+User Input → WRITER → CONTINUITY → REVISION
+                ↓         ↓           ↓
+          quality_score < threshold?
+                ↓
+            YES → WRITER (revise, max N times)
+            NO → SUMMARIZER
+                ↓
+        HUMAN REVIEW [INTERRUPT]
+        User: Approve? / Reject?
+                ↓
+            APPROVE → LORE KEEPER → Done
+            REJECT → WRITER (revise)
+```
 
-## Memory System
+---
 
-LoreSpring uses LightRAG for lore-aware memory:
+## 🛠️ Tech Stack
 
-- **Knowledge Graph**: Stores entities (characters, locations, objects) and relationships
-- **Vector Embeddings**: Semantic search using Sentence Transformers
-- **Local Storage**: JSON files for persistence (lore_db/)
-- **Hybrid Querying**: Combines keyword and semantic search
-- **Dynamic Updates**: Lore evolves with each generated chapter
+**Backend**: FastAPI, LangGraph, Groq LLM, SQLAlchemy, PostgreSQL, LightRAG, Sentence Transformers
+**Frontend**: React 19, TypeScript, Tailwind CSS, Vite, react-force-graph-2d
+**Infrastructure**: Docker, PostgreSQL, Uvicorn, asyncpg
 
-## Installation
+---
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/lore-spring.git
-   cd lore-spring
-   ```
+## 🚀 Quick Start
 
-2. **Create virtual environment:**
-   ```bash
-   python -m venv .venv
-   # On Windows:
-   .venv\Scripts\activate
-   # On Unix/Mac:
-   source .venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment:**
-   Create a `.env` file with required API keys:
-   ```env
-   GROQ_API_KEY=your_groq_api_key_here
-   # Optional LangSmith tracing:
-   LANGCHAIN_TRACING_V2=true
-   LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
-   LANGCHAIN_API_KEY=your_langsmith_key
-   LANGCHAIN_PROJECT=your_project_name
-   ```
-
-## Usage
-
-### Running the Graph Directly
-
-Execute the main narrative generation workflow:
-
+**Backend Setup**
 ```bash
-python -m src.graph.main
-```
-
-This runs the complete agent pipeline:
-1. Writer generates initial draft
-2. Revision agent reviews and scores quality
-3. Continuity agent checks lore consistency
-4. Summarizer creates chapter summary
-5. Lore Keeper updates knowledge graph
-
-### Running the FastAPI Server
-
-Start the API server for HTTP and WebSocket access:
-
-```bash
+git clone https://github.com/yourusername/lorespring.git
+cd lorespring
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env  # Edit with GROQ_API_KEY, POSTGRES_URL
+alembic upgrade head
 uvicorn api.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000` with interactive docs at `/docs`.
-
-#### API Endpoints
-
-- **POST /api/generate** - Generate a new chapter with given parameters
-- **GET /api/health** - Health check endpoint
-- **POST /api/review** - Submit chapter for review and revision
-- **WebSocket /ws** - Real-time streaming of chapter generation
-
-### Memory Management
-
-The system maintains memory in:
-- `memory.json`: Chapter summaries and key events
-- `lore_db/`: LightRAG knowledge graph files
-
-## Configuration
-
-### Database Setup
-
-LoreSpring uses Alembic for database migrations. To set up the database:
-
+**Frontend Setup**
 ```bash
-# Create a new database migration
-alembic revision --autogenerate -m "Description of changes"
-
-# Apply all pending migrations
-alembic upgrade head
-
-# Rollback to previous migration
-alembic downgrade -1
+cd frontend
+npm install
+npm run dev
 ```
 
-Currently supported migrations:
-- Initial schema setup (66dd3f3870f4_init.py)
-- Timezone fixes (407d26302ee2_timezone_fix.py)
+**Database (Docker)**
+```bash
+docker run --name lorespring-db -e POSTGRES_PASSWORD=pass -p 5432:5432 -d postgres:15
+```
 
-Update `sqlalchemy.url` in `alembic.ini` to point to your database (PostgreSQL, MySQL, etc.).
+---
 
-### Narrative State
+## 📚 Usage
 
-The system uses a typed state dictionary (`NarrativeState`) containing:
+1. **Register** - Create account at `/register`
+2. **Create Project** - Provide title, genre, tone, style
+3. **Generate Chapter** - Set chapter number, write direction (e.g., "Sera discovers the hidden map"), adjust quality threshold (0-10) and max revisions
+4. **Review** - Approve or reject generated chapter
+5. **View Graph** - Click ⬡ Graph to see entity relationships
+6. **Browse Chapters** - Select from left sidebar to view full text
 
-- `project_id`: Unique project identifier
-- `chapter_number`: Current chapter being generated
-- `user_direction`: User-provided writing instructions
-- `metadata`: Genre, style, and other settings
-- `lore_context`: Retrieved relevant lore facts
-- `draft`: Current chapter draft
-- `revision_count`: Number of revision iterations
-- `continuity_issues`: Detected consistency problems
-- `revision_result`: Quality assessment and feedback
-- `final_chapter`: Completed chapter text
-- `chapter_summary`: Structured summary
+---
 
-### Quality Assessment
+## 🔌 API Endpoints
 
-The revision agent evaluates drafts on:
-- **Pacing**: Scene rhythm and timing
-- **Character Depth**: Psychological complexity
-- **Prose Clarity**: Writing precision and style
-- **Tension**: Dramatic buildup
-- **Prompt Adherence**: Following user direction
+```
+POST   /auth/register, /auth/login
+POST   /projects, GET /projects, GET /projects/{id}
+GET    /chapters/{project_id}
+POST   /generate (trigger pipeline)
+GET    /review/{thread_id}, POST /resume/{thread_id}
+GET    /graph?project_id={id}
+```
 
-Scores range from 0-10, with most drafts scoring 5-7.
+---
 
-## Dependencies
+## � Environment Variables
 
-Core dependencies include:
+```env
+GROQ_API_KEY=gsk_...
+POSTGRES_URL=postgresql+asyncpg://user:pass@localhost/lorespring
+POSTGRES_URL_SYNC=postgresql://user:pass@localhost/lorespring
+SECRET_KEY=<32-byte-random-string>
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+```
 
-- **LangGraph**: Graph-based workflow orchestration
-- **LangChain-Groq**: Groq LLM integration
-- **LightRAG**: Knowledge graph memory system
-- **Sentence Transformers**: Text embeddings
-- **Pydantic**: Data validation and settings
-- **LangSmith**: Optional tracing and monitoring
-- **FastAPI**: Web framework for REST API
-- **Uvicorn**: ASGI server for FastAPI
-- **SQLAlchemy**: ORM for database access
-- **Alembic**: Database migration tool
-- **python-multipart**: Form data parsing
+---
 
-## Development Status
+## 🐛 Troubleshooting
 
-### Implemented
-- Core agent pipeline (Writer, Revision, Continuity, Summarizer, Lore Keeper)
-- Quality agent for content assessment
-- Human review workflow agent
-- LightRAG knowledge graph integration
-- Local JSON-based persistence
-- Groq LLM client with retry logic
-- Structured data schemas and API schemas
-- Configuration management via Pydantic
-- FastAPI REST application structure
-- WebSocket streaming support
-- Authentication layer with password hashing
-- Database models (Chapter) and ORM setup
-- Alembic database migrations (versioned)
-- Service integration stubs (Neo4j, Pinecone, PostgreSQL)
+| Issue | Solution |
+|-------|----------|
+| "Project ID not found" in Graph | Ensure route is `/graph/:projectId` |
+| "Generation failed" error | Check GROQ_API_KEY and quota |
+| PostgreSQL connection refused | Verify POSTGRES_URL and database is running |
+| Token expired | Clear localStorage and re-authenticate |
 
-### In Progress
-- API endpoints expansion (generate, health, review routes)
-- WebSocket full integration for real-time streaming
-- Database integration with PostgreSQL via Alembic
-- Complete containerization (Dockerfile)
+---
 
-### Not Yet Implemented
-- External database integrations (Neo4j, Pinecone, PostgreSQL production setup)
-- Comprehensive test suite
-- Advanced subgraphs for complex workflows
-- Prompt template management system
-- Deployment pipeline (CI/CD)
+## 📝 License
 
-## Roadmap
+MIT License - See LICENSE file for details
 
-- [x] Implement dedicated Quality agent
-- [x] Add FastAPI REST endpoints structure
-- [x] Implement WebSocket infrastructure
-- [x] Add database models and ORM setup
-- [x] Setup Alembic for database migrations
-- [ ] Complete all FastAPI endpoints (generate, review, status)
-- [ ] Full WebSocket streaming implementation
-- [ ] PostgreSQL production deployment
-- [ ] Add external database support (Neo4j, Pinecone)
-- [ ] Create comprehensive test suite
-- [ ] Implement advanced subgraphs for workflows
-- [ ] Add prompt template management system
-- [ ] Complete Dockerfile and deploy pipeline
+---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement changes with proper type hints
-4. Test locally with the graph workflow
-5. Submit a pull request
-
-## License
-
-[]
-
-## Acknowledgments
-
-- Built with LangGraph for agent orchestration
-- Powered by Groq for fast LLM inference
-- Memory system based on LightRAG
-- Embeddings via Sentence Transformers
-
-
-
-STREAMING IS NOT YET SUPPORTED 
-<!-- Better Error handle on login -->
+**Built with ❤️ by MEEEE **
