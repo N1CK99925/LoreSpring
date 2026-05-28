@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/Dashboard.tsx
 import { useState, useEffect } from 'react'
@@ -59,9 +59,9 @@ export default function Dashboard() {
   }
 
   // Calculate stats
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const totalChapters = projects.reduce((sum, p) => sum + (p as any).chapter_count || 0, 0)
-  const totalWords = projects.reduce((sum, p) => sum + (p as any).word_count || 0, 0)
+
+  // const totalChapters = projects.reduce((sum, p) => sum + (p as any).chapter_count || 0, 0)
+  // const totalWords = projects.reduce((sum, p) => sum + (p as any).word_count || 0, 0)
 
   return (
     <div className="min-h-screen bg-[#f7faf7] flex">

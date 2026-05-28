@@ -111,7 +111,7 @@ export default function Project() {
       )}
 
       {/* Topbar */}
-      <div className="h-12 bg-white border-b border-[#c8e6cc] flex items-center px-5 gap-2 flex-shrink-0">
+      <div className="h-12 bg-white border-b border-[#c8e6cc] flex items-center px-5 gap-2 shrink-0">
         <span 
           className="font-serif text-base text-[#0d8c4a] font-semibold cursor-pointer"
           onClick={() => navigate('/dashboard')}
@@ -121,7 +121,7 @@ export default function Project() {
         <span className="text-[#6a9e72] text-sm mx-1">/</span>
         <span className="text-[#3d6b48] text-sm">{project?.title}</span>
         <div className="w-px h-5 bg-[#c8e6cc] mx-1"></div>
-        <button className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all bg-[#eef6ef] border-[#8ec99a] text-[#0d8c4a]">
+        <button className="border border-[#8ec99a] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all bg-[#eef6ef]">
           ✦ Write
         </button>
         <button disabled className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#c8e6cc] cursor-not-allowed opacity-50">
@@ -142,7 +142,7 @@ export default function Project() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar - Chapters */}
-        <div className="w-[195px] bg-white border-r border-[#c8e6cc] flex flex-col p-4 gap-2 flex-shrink-0 overflow-y-auto">
+        <div className="w-48.5 bg-white border-r border-[#c8e6cc] flex flex-col p-4 gap-2 shrink-0 overflow-y-auto">
           <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Chapters</div>
           <div className="flex flex-col gap-1.5">
             {chapters.map(c => (
@@ -210,7 +210,7 @@ export default function Project() {
         </div>
 
         {/* Right panel - Generation Console */}
-        <div className="w-70 bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 flex-shrink-0 overflow-y-auto">
+        <div className="w-70 bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 shrink-0 overflow-y-auto">
           <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Generation Console</div>
 
           <div className="flex flex-col gap-1">

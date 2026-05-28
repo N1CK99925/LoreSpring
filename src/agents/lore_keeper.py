@@ -12,7 +12,7 @@ from langsmith import traceable
 async def lore_keeper_node(state: NarrativeState) -> NarrativeState:
     user_id = state.get("user_id")
     project_id = state.get("project_id")
-    draft = state.get("draft")
+    draft = state.get("revised_chapter_text") or state.get("final_chapter") or state.get("draft")
     chapter_number = state.get("chapter_number")
     
     if not draft:

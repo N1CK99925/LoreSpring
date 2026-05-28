@@ -54,16 +54,33 @@ async def save_summary(session: AsyncSession, chapter_id: int, summary: str, key
     return chapter_summary
 
 
-async def get_project_summaries(session: AsyncSession, project_id: str,user_id: str) -> list:
+async def get_project_summaries(
+    session: AsyncSession,
+    project_id: str,
+    user_id: str
+) -> list:
+
     result = await session.execute(
         select(ChapterSummary, Chapter.chapter_number)
-        .join(Chapter, ChapterSummary.chapter_id == Chapter.id)
-        .where(Chapter.project_id == project_id, Project.user_id == user_id)
-        .order_by(Chapter.chapter_number)
+        .join(
+            Chapter,
+            ChapterSummary.chapter_id == Chapter.id
+        )
+        .join(
+            Project,
+            Chapter.project_id == Project.id
+        )
+        .where(
+            Chapter.project_id == project_id,
+            Project.user_id == user_id
+        )
+        .order_by(
+            Chapter.chapter_number
+        )
     )
-    # TODO: Fix user id issue
+
     rows = result.all()
-    
+
     return [
         {
             "chapter_number": chapter_number,

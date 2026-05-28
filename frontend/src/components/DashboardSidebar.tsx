@@ -18,7 +18,7 @@ export const DashboardSidebar = ({
   const navigate = useNavigate()
 
   return (
-    <div className="w-[220px] bg-white border-r border-[#c8e6cc] flex flex-col p-5 gap-2.5 flex-shrink-0">
+    <div className="w-55 bg-white border-r border-[#c8e6cc] flex flex-col p-5 gap-2.5 shrink-0">
       <div 
         className="flex items-center gap-2 text-[#0d8c4a] text-[21px] font-semibold font-serif cursor-pointer hover:opacity-80 transition-opacity mb-1"
         onClick={() => navigate('/dashboard')}

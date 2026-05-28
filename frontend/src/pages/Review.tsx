@@ -90,7 +90,7 @@ export default function Review() {
 
   return (
     <div className="min-h-screen bg-[#f7faf7] flex flex-col h-screen overflow-hidden">
-      <div className="h-12 bg-white border-b border-[#c8e6cc] flex items-center px-5 gap-2 flex-shrink-0">
+      <div className="h-12 bg-white border-b border-[#c8e6cc] flex items-center px-5 gap-2 shrink-0">
         <span 
           className="font-serif text-base text-[#0d8c4a] font-semibold cursor-pointer"
           onClick={() => navigate('/dashboard')}
@@ -105,6 +105,10 @@ export default function Review() {
           <span className="text-xs text-[#3d6b48]">Awaiting decision</span>
         </div>
       </div>
+
+      {error && (
+        <ErrorBanner message={error} onDismiss={() => setError('')} variant="modal" />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
@@ -122,7 +126,7 @@ export default function Review() {
             <div className="bg-[#eef6ef] border border-[#c8e6cc] rounded-xl p-3 mt-2">
               <div className="text-[#6a9e72] text-[10px] uppercase tracking-wide">Chapter {reviewData.chapter_number}</div>
               <div className="text-[#1a3320] text-sm font-serif mt-1">Chapter Draft</div>
-              <div className="text-[#0d8c4a] text-xs mt-1">Score: {reviewData.quality_score}</div>
+              <div className="text-[#0d8c4a] text-xs mt-1">Score: {qualityScore}</div>
             </div>
           )}
           
@@ -202,7 +206,7 @@ export default function Review() {
                           style={{ width: getScoreWidth(typeof value === 'number' ? value : 0) }}
                         />
                       </div>
-                      <div className="text-[#3d6b48] text-xs mt-1">{value}</div>
+                      <div className="text-[#3d6b48] text-xs mt-1">{String(value)}</div>
                     </div>
                   ))}
                 </div>
