@@ -1,4 +1,6 @@
 LoreSpring — knowledge-graph backed narrative generation
+
+
 <img src="image.png" alt="LoreSpring" style="max-width:auto; height:560px;" />
 
 

@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 # from typing import Optional
+from urllib.parse import urlparse
 
 class Settings(BaseSettings):
     groq_api_key: str
@@ -22,4 +23,14 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "ignore"
+        
+    def get_postgres_config(self) -> dict:
+        parsed = urlparse(self.postgres_url)
+        return {
+            "POSTGRES_HOST": parsed.hostname,
+            "POSTGRES_PORT": str(parsed.port or 5432),
+            "POSTGRES_USER": parsed.username,
+            "POSTGRES_PASSWORD": parsed.password,
+            "POSTGRES_DATABASE": parsed.path.lstrip("/"),
+        }
 settings = Settings()

@@ -6,6 +6,7 @@ from lightrag.utils import EmbeddingFunc
 from lightrag.kg.shared_storage import initialize_pipeline_status
 from config.settings import settings
 from src.memory.embedding import embed_func
+from lightrag.kg import *
 
 async def groq_llm_func(
     prompt,
@@ -26,11 +27,19 @@ async def groq_llm_func(
     )
 
 
-async def initialize_rag(working_dir: str) -> LightRAG:
-    os.makedirs(working_dir, exist_ok=True)
+async def initialize_rag(user_id: int, project_id: str) -> LightRAG:
+    
+    pg_config = settings.get_postgres_config()
+    for key, value in pg_config.items():
+        os.environ[key] = value
+    
+    os.environ["LIGHTRAG_KV_STORAGE"] = "PGKVStorage"
+    os.environ["LIGHTRAG_GRAPH_STORAGE"] = "PGGraphStorage"
+    os.environ["LIGHTRAG_VECTOR_STORAGE"] = "PGVectorStorage"
+    os.environ["LIGHTRAG_DOC_STATUS_STORAGE"] = "PGDocStatusStorage"
     
     rag = LightRAG(
-        working_dir=working_dir,
+        working_dir="./lore_db",
         llm_model_func=groq_llm_func,
         chunk_token_size=400,
         chunk_overlap_token_size=50,
@@ -38,7 +47,12 @@ async def initialize_rag(working_dir: str) -> LightRAG:
             embedding_dim=384, 
             max_token_size=512,
             func=embed_func
-        )
+        ),
+        graph_storage="PGGraphStorage",
+        vector_storage="PGVectorStorage",
+        doc_status_storage="PGDocStatusStorage",
+        kv_storage="PGKVStorage",
+        workspace=f"{user_id}:{project_id}"
     )
     
     await rag.initialize_storages()
@@ -63,8 +77,8 @@ async def get_project_rag(user_id: int, project_id: str) -> LightRAG:
         if key in _rag_cache:
             return _rag_cache[key]
         
-        working_dir = f"./lore_db/{user_id}/{project_id}"
-        rag_instance = await initialize_rag(working_dir)
+        
+        rag_instance = await initialize_rag(user_id,project_id)
         _rag_cache[key] = rag_instance
         
         print(f"RAG initialized for user {user_id}, project {project_id}")
@@ -92,11 +106,6 @@ def cleanup_project_rag(user_id: int, project_id: str):
 
 
 async def delete_project_rag(user_id: int, project_id: str):
-    import shutil
-    
     cleanup_project_rag(user_id, project_id)
     
-    working_dir = f"./lore_db/{user_id}/{project_id}"
-    if os.path.exists(working_dir):
-        shutil.rmtree(working_dir, ignore_errors=True)
-        print(f"RAG working directory deleted: {working_dir}")
+  
