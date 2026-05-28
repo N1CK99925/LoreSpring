@@ -1,166 +1,61 @@
-# 🌿 LoreSpring
+LoreSpring — knowledge-graph backed narrative generation
 
-Multi-Agent narrative generation with lore memory and human review loop.
+Overview
+--------
+LoreSpring is a backend-first platform that combines a modular multi-agent LLM pipeline with a persistent knowledge graph to generate, validate, and refine long-form narrative content. The system emphasizes reproducible state (PostgreSQL + GraphML stores), incremental revisions, and a human-in-the-loop review step before persisting canonical lore.
 
-## Overview
+Core pipeline
+-------------
+1. Ingest: user project metadata and generation prompts are recorded in the API and persisted to the project store.
+2. Draft generation: a `Writer` agent invokes the configured LLM (Groq client by default) with contextual inputs (project state, recent chapters, extracted entities).
+3. Consistency & validation: a `Continuity` agent checks the draft against the knowledge graph for contradictions and missing references; it tags and extracts entities.
+4. Revision loop: a `Revision` agent scores quality and requests iterative rewrites from the `Writer` until thresholds or max iterations are reached.
+5. Summarize & embed: accepted drafts are summarized and key entities are encoded into vector embeddings; GraphML and vector stores in `lore_db` are updated.
+6. Human review & commit: an explicit human approval step (review UI) gates final writes performed by the `Lore Keeper`, which updates the canonical graph and database checkpoints.
 
-AI-powered story generation platform with FastAPI backend, React frontend, and LangGraph orchestration. Maintains narrative consistency across chapters using knowledge graphs and specialized agents.
+Repository layout (high level)
+------------------------------
+- `api/` — FastAPI application and HTTP routes (auth, projects, generate, review, graph_viz).
+- `src/agents/` — agent implementations (writer, revision, continuity, summarizer, lore_keeper, human_review).
+- `graph/` — graph construction and pipeline orchestration utilities.
+- `llm/` — LLM client integration (Groq), prompts and request helpers.
+- `services/` — adapters for Postgres, Neo4j, Pinecone/vector DB, and other external services.
+- `frontend/` — React + TypeScript UI.
+- `lore_db/` — persisted GraphML and on-disk vector/metadata stores used for reproducible runs.
 
-## Features
+Quick start (development)
+-------------------------
+Prerequisites: Python 3.10+, Node.js 18+, PostgreSQL (or container), optional vector DB (Pinecone) and Neo4j when enabled.
 
-- Multi-agent orchestration (Writer, Revision, Continuity, Summarizer, Lore Keeper, Human Review)
-- Knowledge graph with GraphML + vector embeddings
-- Iterative refinement with quality scoring
-- PostgreSQL checkpointing for state resumption
-- JWT authentication with project isolation
-- React UI with graph visualization
-- Human-in-the-loop approval workflow
+Backend (development)
 
----
-
-## 🏗️ Architecture
-
-```
-Backend (FastAPI + LangGraph)     Frontend (React + TS)       Storage
-├── api/routes/                    ├── pages/                ├── PostgreSQL
-│   ├── auth.py                   │   ├── Login.tsx         ├── lore_db/
-│   ├── projects.py               │   ├── Dashboard.tsx     │   └── GraphML
-│   ├── chapters.py               │   ├── Project.tsx       └── Vector DB
-│   ├── generate.py               │   ├── GraphPage.tsx
-│   ├── review.py                 │   └── Review.tsx
-│   └── graph_viz.py              ├── api/
-├── src/agents/                   ├── components/
-│   ├── writer.py                 └── hooks/
-│   ├── revision.py
-│   ├── continuity.py
-│   ├── summarizer.py
-│   ├── lore_keeper.py
-│   └── human_review.py
-└── src/graph/
-    ├── main.py
-    └── pipeline.py
-```
-
----
-
-## 🤖 Agents
-
-**Writer** - Generates drafts from user direction + lore context
-**Revision** - Assesses quality and proposes improvements
-**Continuity** - Validates lore consistency and detects conflicts
-**Summarizer** - Creates chapter summaries for context
-**Human Review** - Interrupt for user approval/rejection
-**Lore Keeper** - Updates knowledge graph with new entities
-
----
-
-## 🔄 Pipeline Flow
-
-```
-User Input → WRITER → CONTINUITY → REVISION
-                ↓         ↓           ↓
-          quality_score < threshold?
-                ↓
-            YES → WRITER (revise, max N times)
-            NO → SUMMARIZER
-                ↓
-        HUMAN REVIEW [INTERRUPT]
-        User: Approve? / Reject?
-                ↓
-            APPROVE → LORE KEEPER → Done
-            REJECT → WRITER (revise)
-```
-
----
-
-## 🛠️ Tech Stack
-
-**Backend**: FastAPI, LangGraph, Groq LLM, SQLAlchemy, PostgreSQL, LightRAG, Sentence Transformers
-**Frontend**: React 19, TypeScript, Tailwind CSS, Vite, react-force-graph-2d
-**Infrastructure**: Docker, PostgreSQL, Uvicorn, asyncpg
-
----
-
-## 🚀 Quick Start
-
-**Backend Setup**
-```bash
-git clone https://github.com/yourusername/lorespring.git
-cd lorespring
+```powershell
 python -m venv .venv
-source .venv/bin/activate
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cp .env.example .env  # Edit with GROQ_API_KEY, POSTGRES_URL
+cp .env.example .env  # set GROQ_API_KEY, POSTGRES_URL, other secrets
 alembic upgrade head
 uvicorn api.main:app --reload
 ```
 
-**Frontend Setup**
+Frontend (development)
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**Database (Docker)**
-```bash
-docker run --name lorespring-db -e POSTGRES_PASSWORD=pass -p 5432:5432 -d postgres:15
-```
+Operational notes
+-----------------
+- Environment variables: `GROQ_API_KEY`, `POSTGRES_URL` (async), `POSTGRES_URL_SYNC`, `SECRET_KEY`.
+- External services: vector DB (Pinecone/compatible), optional Neo4j for richer graph queries, and PostgreSQL for transactional state.
+- Persistent graph artifacts are stored under `lore_db/` (GraphML + JSON indexes) to allow offline inspection and reproducible pipeline runs.
 
----
+Developer pointers
+------------------
+- Primary pipeline entry points: `api/routes/generate.py`, `src/agents/` and `graph/pipeline.py`.
+- LLM integration: `llm/groq_client.py` and `llm/prompts.py`.
+- Storage adapters: `services/postgres.py`, `services/neo4j.py`, `services/pinecone.py`.
 
-## 📚 Usage
-
-1. **Register** - Create account at `/register`
-2. **Create Project** - Provide title, genre, tone, style
-3. **Generate Chapter** - Set chapter number, write direction (e.g., "Sera discovers the hidden map"), adjust quality threshold (0-10) and max revisions
-4. **Review** - Approve or reject generated chapter
-5. **View Graph** - Click ⬡ Graph to see entity relationships
-6. **Browse Chapters** - Select from left sidebar to view full text
-
----
-
-## 🔌 API Endpoints
-
-```
-POST   /auth/register, /auth/login
-POST   /projects, GET /projects, GET /projects/{id}
-GET    /chapters/{project_id}
-POST   /generate (trigger pipeline)
-GET    /review/{thread_id}, POST /resume/{thread_id}
-GET    /graph?project_id={id}
-```
-
----
-
-## � Environment Variables
-
-```env
-GROQ_API_KEY=gsk_...
-POSTGRES_URL=postgresql+asyncpg://user:pass@localhost/lorespring
-POSTGRES_URL_SYNC=postgresql://user:pass@localhost/lorespring
-SECRET_KEY=<32-byte-random-string>
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-```
-
----
-
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "Project ID not found" in Graph | Ensure route is `/graph/:projectId` |
-| "Generation failed" error | Check GROQ_API_KEY and quota |
-| PostgreSQL connection refused | Verify POSTGRES_URL and database is running |
-| Token expired | Clear localStorage and re-authenticate |
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
-
----
-
-**Built with ❤️ by MEEEE **
+If you need a brief walkthrough of how a specific component (for example, the embedding flow or the review UI) works, open an issue or request a short doc update in the repository.
