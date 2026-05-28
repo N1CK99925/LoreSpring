@@ -1,5 +1,7 @@
 LoreSpring — knowledge-graph backed narrative generation
-<img src="image.png" alt="LoreSpring" style="max-width:560px; height:560px;" />
+<img src="image.png" alt="LoreSpring" style="max-width:auto; height:560px;" />
+
+
 Overview
 --------
 LoreSpring is a backend-first platform that combines a modular multi-agent LLM pipeline with a persistent knowledge graph to generate, validate, and refine long-form narrative content. The system emphasizes reproducible state (PostgreSQL + GraphML stores), incremental revisions, and a human-in-the-loop review step before persisting canonical lore.
