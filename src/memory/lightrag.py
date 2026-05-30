@@ -48,7 +48,7 @@ async def initialize_rag(user_id: int, project_id: str) -> LightRAG:
             max_token_size=512,
             func=embed_func
         ),
-        graph_storage="PGGraphStorage",
+        graph_storage="Neo4JStorage",
         vector_storage="PGVectorStorage",
         doc_status_storage="PGDocStatusStorage",
         kv_storage="PGKVStorage",

@@ -1,7 +1,7 @@
 LoreSpring — knowledge-graph backed narrative generation
 
 
-<img src="image.png" alt="LoreSpring" style="max-width:auto; height:560px;" />
+<img src="image.png" alt="LoreSpring" style="max-width:320px; height:auto;" />
 
 
 Overview
@@ -49,6 +49,49 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Docker
+------
+The compose configuration reads container environment variables from a top-level `.env` file. Ensure you have a `.env` file at the repository root with production or development values (do not commit secrets).
+
+Build and start services:
+
+```bash
+docker compose up --build
+```
+
+To stop and remove containers: `docker compose down -v`.
+
+Using cloud-hosted databases
+---------------------------
+This repository is configured to use cloud-hosted Postgres (Neon) and Neo4j (Aura) by default. Local DB containers were removed from the compose configuration.
+
+1. Ensure `.env` contains your cloud DB connection strings (`POSTGRES_URL`, `POSTGRES_URL_SYNC`, `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`).
+
+2. Start backend and frontend containers (no local DBs):
+
+```bash
+docker compose up --build backend frontend
+```
+
+Notes:
+- `POSTGRES_URL` must use the `asyncpg` driver for async DB access (SQLAlchemy async). Example: `postgresql+asyncpg://user:pass@ep-.../dbname`.
+- For Neo4j Aura use the `neo4j+s://` scheme (TLS) and supply `NEO4J_USER` and `NEO4J_PASSWORD`.
+- Ensure your cloud DB allows connections from the host running Docker (IP allowlist / VPC connectors as required).
+
+Migrations
+----------
+On container startup the backend will attempt to run Alembic migrations before launching the app. This is performed by the image entrypoint and executes:
+
+```bash
+alembic upgrade head
+```
+
+Requirements:
+- `POSTGRES_URL_SYNC` (sync connection string) must be present in `.env` and reachable by the container so Alembic can connect.
+- `alembic` is included in `requirements.txt` and therefore available in the image built from the provided `Dockerfile`.
+
+If you prefer to manage migrations outside containers (CI/CD or manual runs), you can change the `Dockerfile` ENTRYPOINT or run the container with `--entrypoint` to skip migrations.
 
 Operational notes
 -----------------
