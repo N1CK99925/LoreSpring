@@ -1,6 +1,6 @@
 from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
-from src.schemas.revision import RevisionResult
+from schemas.revision import RevisionResult
 from langchain_core.messages import HumanMessage, SystemMessage
 from src.memory.lightrag import query_lore
 from json_repair import repair_json

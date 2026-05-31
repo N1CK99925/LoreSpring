@@ -1,0 +1,30 @@
+services:
+  # local database services removed — project uses cloud-managed Postgres (Neon)
+  # and Neo4j Aura by default. If you need local DBs, re-add similar services
+  # or run them separately.
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./:/app:rw
+      - ./lore_db:/app/lore_db
+    ports:
+      - "8000:8000"
+    # Configure `POSTGRES_URL` and `NEO4J_URI` in `.env.docker` to point at
+    # your managed Neon/Aura endpoints. The backend will use those endpoints
+    # and does not expect local DB containers.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+# no compose-managed volumes required when using cloud DBs

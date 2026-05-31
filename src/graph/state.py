@@ -1,6 +1,6 @@
 from src.schemas.lore import LoreResult
 from src.schemas.continuity import ContinuityResult
-from src.schemas.revision import RevisionResult
+from schemas.revision import RevisionResult
 from src.schemas.summarizer import SummarizerResult
 from typing import Any, TypedDict,  List, Dict
 
