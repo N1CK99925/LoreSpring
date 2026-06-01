@@ -1,4 +1,5 @@
 LoreSpring — knowledge-graph backed narrative generation
+
 ts readme was written by ai, is wrong need to change
 
 <img src="image.png" alt="LoreSpring" style="max-width:320px; height:auto;" />
