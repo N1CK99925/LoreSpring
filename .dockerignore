@@ -1,3 +1,16 @@
+# Images/assets not needed at runtime
+*.png
+*.jpg
+*.jpeg
+z-lorespring-assets/
+
+# Frontend — backend doesn't run this
+frontend/
+
+# Local/dev state
+memory.json
+
+# Already had these:
 .git
 __pycache__
 **/*.pyc
@@ -6,3 +19,14 @@ __pycache__
 venv
 lore_db
 *.sqlite
+
+# Add these too — common bloat/leak risks
+.example.env
+docker-compose.yml
+README.md
+.dockerignore
+*.md
+node_modules/
+.pytest_cache/
+.mypy_cache/
+__pycache__/
