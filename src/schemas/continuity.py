@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Literal
 
 
+
 class ContinuityIssue(BaseModel):
     type: Literal["contradiction", "timeline", "character", "object", "location"] = Field(
         description="Category of the continuity issue: contradiction (direct factual conflict), timeline (impossible sequence of events), character (inconsistent traits or status), object (item changes identity or impossibly reappears), location (impossible movement or setting conflict)"
