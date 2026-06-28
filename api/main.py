@@ -35,7 +35,10 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://lorespring.vercel.app",
+        "http://localhost:5173",  # adjust to your actual local Vite dev port
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
