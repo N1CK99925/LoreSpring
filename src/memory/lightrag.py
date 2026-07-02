@@ -44,8 +44,8 @@ async def initialize_rag(user_id: int, project_id: str) -> LightRAG:
         chunk_token_size=400,
         chunk_overlap_token_size=50,
         embedding_func=EmbeddingFunc(
-            embedding_dim=384, 
-            max_token_size=512,
+            embedding_dim=1024, 
+            max_token_size=8192,
             func=embed_func
         ),
         graph_storage="Neo4JStorage",
