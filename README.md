@@ -1,5 +1,5 @@
 # LoreSpring
-
+![alt text](image.png)
 LoreSpring is a full-stack storytelling platform for generating, reviewing, and refining long-form narrative chapters with the help of an LLM-driven multi-agent pipeline and a persistent story memory graph.
 
 The product is built around a simple authoring loop:
