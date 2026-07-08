@@ -1,49 +1,137 @@
-LoreSpring — knowledge-graph backed narrative generation
+# LoreSpring
 
-ts readme was written by ai, is wrong need to change
+LoreSpring is a full-stack storytelling platform for generating, reviewing, and refining long-form narrative chapters with the help of an LLM-driven multi-agent pipeline and a persistent story memory graph.
 
-<img src="image.png" alt="LoreSpring" style="max-width:320px; height:auto;" />
+The product is built around a simple authoring loop:
 
+1. Create a story project.
+2. Describe the next chapter direction.
+3. Generate a chapter draft through the backend pipeline.
+4. Review and approve or reject the draft.
+5. Persist the accepted chapter and expand the story memory graph for future chapters.
 
-Overview
---------
-LoreSpring is a backend-first platform that combines a modular multi-agent LLM pipeline with a persistent knowledge graph to generate, validate, and refine long-form narrative content. The system emphasizes reproducible state (PostgreSQL + GraphML stores), incremental revisions, and a human-in-the-loop review step before persisting canonical lore.
+## What the project does
 
-Core pipeline
--------------
-1. Ingest: user project metadata and generation prompts are recorded in the API and persisted to the project store.
-2. Draft generation: a `Writer` agent invokes the configured LLM (Groq client by default) with contextual inputs (project state, recent chapters, extracted entities).
-3. Consistency & validation: a `Continuity` agent checks the draft against the knowledge graph for contradictions and missing references; it tags and extracts entities.
-4. Revision loop: a `Revision` agent scores quality and requests iterative rewrites from the `Writer` until thresholds or max iterations are reached.
-5. Summarize & embed: accepted drafts are summarized and key entities are encoded into vector embeddings; GraphML and vector stores in `lore_db` are updated.
-6. Human review & commit: an explicit human approval step (review UI) gates final writes performed by the `Lore Keeper`, which updates the canonical graph and database checkpoints.
+LoreSpring combines:
 
-Repository layout (high level)
-------------------------------
-- `api/` — FastAPI application and HTTP routes (auth, projects, generate, review, graph_viz).
-- `src/agents/` — agent implementations (writer, revision, continuity, summarizer, lore_keeper, human_review).
-- `graph/` — graph construction and pipeline orchestration utilities.
-- `llm/` — LLM client integration (Groq), prompts and request helpers.
-- `services/` — adapters for Postgres, Neo4j, Pinecone/vector DB, and other external services.
-- `frontend/` — React + TypeScript UI.
-- `lore_db/` — persisted GraphML and on-disk vector/metadata stores used for reproducible runs.
+- A FastAPI backend for authentication, project management, chapter generation, review, and graph endpoints.
+- A LangGraph-based generation pipeline with specialized agents for writing, continuity checking, revision, summarization, human review, and lore persistence.
+- A LightRAG-style memory layer that indexes completed chapters into persistent storage for later retrieval.
+- A React + TypeScript + Vite frontend for the project dashboard, chapter editor, review flow, and story graph visualization.
 
-Quick start (development)
--------------------------
-Prerequisites: Python 3.10+, Node.js 18+, PostgreSQL (or container), optional vector DB (Pinecone) and Neo4j when enabled.
+## Architecture at a glance
 
-Backend (development)
+### Backend
 
-```powershell
+The backend lives under [api](api) and [src](src).
+
+- [api/main.py](api/main.py) creates the FastAPI app, wires CORS, and initializes the LangGraph checkpointer and graph service.
+- [api/routes](api/routes) exposes the main HTTP endpoints for auth, projects, generation, review, chapters, health, and graph visualization.
+- [src/graph](src/graph) defines the LangGraph workflow and state model that orchestrates the chapter-generation pipeline.
+- [src/agents](src/agents) contains the individual agents:
+  - writer: generates a draft chapter
+  - continuity: checks for logical contradictions against prior lore
+  - revision: scores the draft and requests rewrites when needed
+  - summarizer: creates chapter summaries and structured plot memory
+  - human_review: pauses for human approval
+  - lore_keeper: indexes accepted chapters into the memory system
+
+### Data and memory layer
+
+The application uses several persistence layers:
+
+- PostgreSQL for users, projects, chapters, and chapter summaries.
+- Neo4j for graph storage used by the lore memory layer.
+- Local project storage under [lore_db](lore_db) for LightRAG-related artifacts and indexes.
+- SQLAlchemy async models are defined in [database](database).
+
+### Frontend
+
+The frontend lives under [frontend](frontend) and uses React, TypeScript, and Vite.
+
+- [frontend/src/pages](frontend/src/pages) contains the dashboard, project page, review page, login/register screens, and graph page.
+- [frontend/src/api](frontend/src/api) wraps the backend API calls.
+- [frontend/src/components](frontend/src/components) contains reusable UI pieces such as the project modal and sidebar.
+
+## Repository layout
+
+- [api](api) — FastAPI application and routes
+- [config](config) — runtime settings and environment loading
+- [database](database) — SQLAlchemy models and session management
+- [frontend](frontend) — React/Vite client application
+- [src/agents](src/agents) — LLM-powered narrative agents
+- [src/graph](src/graph) — LangGraph workflow and narrative state
+- [src/llm](src/llm) — LLM client wiring and prompt helpers
+- [src/memory](src/memory) — LightRAG and embedding integration
+- [src/schemas](src/schemas) — request/response and agent payload schemas
+- [src/services](src/services) — service layer for projects, chapters, graph storage, auth, and persistence
+- [alembic](alembic) — database migrations
+- [lore_db](lore_db) — persisted lore memory artifacts
+
+## Core user flow
+
+1. Register or log in.
+2. Create a project with genre, tone, and style.
+3. Open a project and provide a chapter direction.
+4. Generate a chapter draft.
+5. Review the generated draft in the review screen.
+6. Approve to persist the chapter, or reject to discard it and regenerate.
+7. Explore the resulting story graph from the graph view.
+
+## Prerequisites
+
+You will need:
+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL access
+- A Groq API key
+- Access to a Neo4j instance for the graph-backed memory layer
+
+## Environment configuration
+
+Create a file named .env at the repository root and provide the values below.
+
+```env
+GROQ_API_KEY=your_groq_key
+POSTGRES_URL=postgresql+asyncpg://user:password@host:5432/dbname
+POSTGRES_URL_SYNC=postgresql+psycopg://user:password@host:5432/dbname
+SECRET_KEY=replace-with-a-long-random-secret
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+JINA_API_KEY=your_jina_key
+
+# Optional observability
+LANGSMITH_TRACING=false
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY=your_langsmith_key
+LANGSMITH_PROJECT=lorespring
+
+# Optional frontend API override for local development
+VITE_API_URL=http://localhost:8000
+```
+
+Notes:
+
+- The backend reads configuration from [config/settings.py](config/settings.py).
+- The app expects both async and sync PostgreSQL connection strings because the backend uses async SQLAlchemy while Alembic and startup tasks need a sync-capable connection.
+- The project is currently wired for managed or external Postgres and Neo4j services rather than local-only containers.
+
+## Local development
+
+### Backend
+
+```bash
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # set GROQ_API_KEY, POSTGRES_URL, other secrets
 alembic upgrade head
 uvicorn api.main:app --reload
 ```
 
-Frontend (development)
+The API will be available at http://localhost:8000.
+
+### Frontend
 
 ```bash
 cd frontend
@@ -51,59 +139,89 @@ npm install
 npm run dev
 ```
 
-Docker
-------
-The compose configuration reads container environment variables from a top-level `.env` file. Ensure you have a `.env` file at the repository root with production or development values (do not commit secrets).
+The frontend dev server will usually run at http://localhost:5173.
 
-Build and start services:
+## Docker
+
+The repository includes a Docker setup for the backend and frontend.
 
 ```bash
 docker compose up --build
 ```
 
-To stop and remove containers: `docker compose down -v`.
+- Backend: http://localhost:8000
+- Frontend: http://localhost:3000
 
-Using cloud-hosted databases
----------------------------
-This repository is configured to use cloud-hosted Postgres (Neon) and Neo4j (Aura) by default. Local DB containers were removed from the compose configuration.
+The container entrypoint runs Alembic migrations before starting the FastAPI app.
 
-1. Ensure `.env` contains your cloud DB connection strings (`POSTGRES_URL`, `POSTGRES_URL_SYNC`, `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`).
+## Database migrations
 
-2. Start backend and frontend containers (no local DBs):
-
-```bash
-docker compose up --build backend frontend
-```
-
-Notes:
-- `POSTGRES_URL` must use the `asyncpg` driver for async DB access (SQLAlchemy async). Example: `postgresql+asyncpg://user:pass@ep-.../dbname`.
-- For Neo4j Aura use the `neo4j+s://` scheme (TLS) and supply `NEO4J_USER` and `NEO4J_PASSWORD`.
-- Ensure your cloud DB allows connections from the host running Docker (IP allowlist / VPC connectors as required).
-
-Migrations
-----------
-On container startup the backend will attempt to run Alembic migrations before launching the app. This is performed by the image entrypoint and executes:
+Migrations are managed with Alembic.
 
 ```bash
 alembic upgrade head
 ```
 
-Requirements:
-- `POSTGRES_URL_SYNC` (sync connection string) must be present in `.env` and reachable by the container so Alembic can connect.
-- `alembic` is included in `requirements.txt` and therefore available in the image built from the provided `Dockerfile`.
+If you add or change the SQLAlchemy models under [database/models](database/models), generate a new migration with:
 
-If you prefer to manage migrations outside containers (CI/CD or manual runs), you can change the `Dockerfile` ENTRYPOINT or run the container with `--entrypoint` to skip migrations.
+```bash
+alembic revision --autogenerate -m "describe your change"
+```
 
-Operational notes
------------------
-- Environment variables: `GROQ_API_KEY`, `POSTGRES_URL` (async), `POSTGRES_URL_SYNC`, `SECRET_KEY`.
-- External services: vector DB (Pinecone/compatible), optional Neo4j for richer graph queries, and PostgreSQL for transactional state.
-- Persistent graph artifacts are stored under `lore_db/` (GraphML + JSON indexes) to allow offline inspection and reproducible pipeline runs.
+## API overview
 
-Developer pointers
-------------------
-- Primary pipeline entry points: `api/routes/generate.py`, `src/agents/` and `graph/pipeline.py`.
-- LLM integration: `llm/groq_client.py` and `llm/prompts.py`.
-- Storage adapters: `services/postgres.py`, `services/neo4j.py`, `services/pinecone.py`.
+### Authentication
 
-If you need a brief walkthrough of how a specific component (for example, the embedding flow or the review UI) works, open an issue or request a short doc update in the repository.
+- POST /auth/register
+- POST /auth/login
+- POST /auth/logout
+
+### Projects
+
+- POST /projects
+- GET /projects
+- GET /projects/{project_id}
+
+### Chapters
+
+- GET /chapters/{project_id}
+
+### Generation
+
+- POST /generate
+
+### Review
+
+- GET /review/{thread_id}
+- POST /resume/{thread_id}
+
+### Graph
+
+- GET /graph?project_id=...
+
+## How the generation pipeline works
+
+When a chapter is generated, the app runs a LangGraph workflow that performs the following steps:
+
+1. The writer agent creates an initial draft from the project metadata, chapter direction, and prior summaries.
+2. The continuity agent checks the draft for contradictions against previously established lore.
+3. The revision agent scores the draft and may trigger rewrites until the minimum quality threshold is met or the revision limit is reached.
+4. The summarizer agent produces structured summary data for future context.
+5. The human review step pauses for approval.
+6. If approved, the lore keeper indexes the chapter into the story memory layer and the chapter is saved to PostgreSQL.
+
+## Development notes
+
+- The project is intentionally backend-first and uses structured memory to improve continuity across chapters.
+- The frontend is currently focused on the core authoring loop rather than a full publishing workflow.
+- Some parts of the repository still contain TODOs or experimental hooks, so expect ongoing refinement as the product evolves.
+
+## Troubleshooting
+
+- If the backend fails to start, verify that Postgres and Neo4j are reachable and that the .env values are valid.
+- If the frontend cannot contact the API, confirm that VITE_API_URL points to the backend URL and that the backend is running on port 8000.
+- If migrations fail, check the PostgreSQL connection strings and ensure the database user has permission to create tables.
+
+## License
+
+This repository does not currently declare a license file. If you plan to redistribute or reuse the project publicly, add an explicit license before deployment.
