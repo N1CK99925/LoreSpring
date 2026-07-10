@@ -16,13 +16,20 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
     project_id = state.get("project_id")
 
     previous_chapters_summary = state.get("previous_chapter_summary", [])
-    prev_summary_text = "\n\n".join([
-        f"Chapter {s['chapter_number']}: {s['summary']}"
-        for s in previous_chapters_summary
-    ]) if previous_chapters_summary else "No prior chapters."
+    prev_summary_text = (
+        "\n\n".join(
+            [
+                f"Chapter {s['chapter_number']}: {s['summary']}"
+                for s in previous_chapters_summary
+            ]
+        )
+        if previous_chapters_summary
+        else "No prior chapters."
+    )
 
     continuity_lore = await query_lore(
-        user_id,project_id,
+        user_id,
+        project_id,
         """Retrieve all canonical established facts relevant to:
         - Characters appearing in this draft (traits, status, relationships)
         - Timeline of major events so far
@@ -31,10 +38,8 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
         - Any previously resolved conflicts
 
         Return factual memory only. No commentary.""",
-        mode="hybrid"
+        mode="hybrid",
     )
-
-   
 
     system = """You are a narrative continuity validation engine for long-form fiction.
 
@@ -88,8 +93,6 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
     except Exception as e1:
         print(f"continuity node attempt 1 failed: {e1}, trying fallback...")
-
-      
 
         system_fallback = (
             "You are a JSON-only output machine. "
@@ -153,7 +156,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt)
+                    HumanMessage(content=fallback_prompt),
                 ]
             )
 
@@ -171,15 +174,8 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
     critical = [i for i in issues if i.get("severity") == "high"]
 
-
-    
     return {
-        
         "continuity_issues": issues,
         "continuity_feedback": critical,
-        "should_revise": len(critical) > 0
-        
-        
-        
-        
+        "should_revise": len(critical) > 0,
     }

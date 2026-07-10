@@ -38,7 +38,9 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
-    engine = create_async_engine(settings.postgres_url, poolclass=pool.NullPool,connect_args= {"ssl": True})
+    engine = create_async_engine(
+        settings.postgres_url, poolclass=pool.NullPool, connect_args={"ssl": True}
+    )
     async with engine.begin() as conn:
         await conn.run_sync(do_run_migrations)
     await engine.dispose()

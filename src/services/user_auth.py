@@ -7,7 +7,8 @@ from database.models.user import User
 from datetime import datetime, timedelta, timezone
 from api.auth.utils import verify_password
 
-async def create_access_token(data:dict, expires_delta: int | None = None):
+
+async def create_access_token(data: dict, expires_delta: int | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_delta)
@@ -16,13 +17,9 @@ async def create_access_token(data:dict, expires_delta: int | None = None):
     to_encode.update({"exp": expire})
 
     encoded_jwt = await asyncio.to_thread(
-        jwt.encode, 
-        to_encode, 
-        settings.secret_key, 
-        algorithm=settings.algorithm
+        jwt.encode, to_encode, settings.secret_key, algorithm=settings.algorithm
     )
     return encoded_jwt
-
 
 
 async def authenticate_user(database: AsyncSession, username: str, password: str):

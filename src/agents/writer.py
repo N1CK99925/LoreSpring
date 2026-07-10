@@ -1,4 +1,3 @@
-
 from src.agents.utils import build_revision_plan
 from src.llm.groq_client import get_llm, select_model
 from src.graph.state import NarrativeState
@@ -10,48 +9,48 @@ from src.memory.lightrag import query_lore
 from langsmith import traceable
 
 
-
 @traceable(name="writer")
 async def writer_agent_node(state: NarrativeState) -> NarrativeState:
-    
+
     previous_chapters_summary = state.get("previous_chapter_summary", [])
-    
-    prev_summary = "\n\n".join([
-        f"Chapter {s['chapter_number']}: {s['summary']}"
-        for s in previous_chapters_summary
-    ]) if previous_chapters_summary else "This is the first chapter."
-    
+
+    prev_summary = (
+        "\n\n".join(
+            [
+                f"Chapter {s['chapter_number']}: {s['summary']}"
+                for s in previous_chapters_summary
+            ]
+        )
+        if previous_chapters_summary
+        else "This is the first chapter."
+    )
+
     user_id = state.get("user_id")
     project_id = state.get("project_id")
     metadata = state.get("metadata", {})
     genre = metadata.get("genre", "fantasy")
     revision_count = state.get("revision_count", 0)
-    
+
     draft_current = state.get("draft", "")
-    
-    
-    
 
     temp = max(0.3, 0.7 - (revision_count * 0.2))
     continuity_issues = state.get("continuity_issues", [])
 
-   
-    
-    continuity_text = "\n".join(
-        [f"[{i.get('severity')}] {i.get('description')}" for i in continuity_issues]
-    ) if continuity_issues else "No continuity issues detected."
+    continuity_text = (
+        "\n".join(
+            [f"[{i.get('severity')}] {i.get('description')}" for i in continuity_issues]
+        )
+        if continuity_issues
+        else "No continuity issues detected."
+    )
 
-    
-    
-
-
-  
     if revision_count == 0:
         lore_context = await query_lore(
-            user_id,project_id,
+            user_id,
+            project_id,
             f"""
             Provide all relevant established canonical facts involving:
-            - Characters referenced in: {state.get('user_direction')}
+            - Characters referenced in: {state.get("user_direction")}
             - Locations involved
             - Ongoing conflicts
             - Previously revealed objects or mechanisms
@@ -59,16 +58,11 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
 
             Return factual lore only. No commentary.
             """,
-            mode="hybrid"
+            mode="hybrid",
         )
-        
+
     else:
         lore_context = state.get("lore_context", "")
-
-
-
-
-
 
     if revision_count == 0:
         system = f"""
@@ -102,9 +96,9 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             {prev_summary}
 
             User Direction:
-            {state['user_direction']}
+            {state["user_direction"]}
 
-            Write Chapter {state['chapter_number']} now. Begin directly with the narrative.
+            Write Chapter {state["chapter_number"]} now. Begin directly with the narrative.
         """
 
         llm = get_llm(select_model("creative_writing"), temp=temp, max_tokens=2000)
@@ -114,18 +108,19 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         return {
             "lore_context": lore_context,
             "draft": response.content,
-            "revision_count": 1
+            "revision_count": 1,
         }
-
 
     else:
         feedback = state.get("revision_result", {}).get("quality_feedback", [])
-        feedback_text = "\n".join(feedback) if feedback else "No specific quality issues noted."
-        
+        feedback_text = (
+            "\n".join(feedback) if feedback else "No specific quality issues noted."
+        )
+
         metrics = state.get("revision_result", {}).get("quality_metrics", {})
         metrics_text = "\n".join([f"- {k}: {v}/10" for k, v in metrics.items()])
         revision_result = state.get("revision_result", {})
-        revision_plan = build_revision_plan(revision_result) 
+        revision_plan = build_revision_plan(revision_result)
 
         system = f"""
             You are a senior developmental editor rewriting a {genre} chapter that failed quality review.
@@ -145,17 +140,17 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
              <revision_targets>
                 You MUST address ONLY these two dimensions. Everything else stays intact.
                 
-                {chr(10).join([f"- {dim}: {instr}" for dim, instr in revision_plan['dimension_instructions'].items()])}
+                {chr(10).join([f"- {dim}: {instr}" for dim, instr in revision_plan["dimension_instructions"].items()])}
                 </revision_targets>
 
                 <banned_phrases>
                 These exact phrases appeared in the previous draft and were flagged as weak.
                 Do NOT use them or any close variation:
-                {chr(10).join([f'- "{p}"' for p in revision_plan['banned_phrases']])}
+                {chr(10).join([f'- "{p}"' for p in revision_plan["banned_phrases"]])}
                 </banned_phrases>
 
                 <specific_problems>
-                {chr(10).join(revision_plan['raw_feedback'])}
+                {chr(10).join(revision_plan["raw_feedback"])}
                 </specific_problems>
 
             <hard_constraints>
@@ -182,7 +177,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             Rewrite this chapter entirely.
             Incorporate required improvements.
             Fix all continuity errors.
-            Maintain the {metadata.get('style', 'literary')} style.
+            Maintain the {metadata.get("style", "literary")} style.
 
             Output ONLY the revised chapter text.
             """
@@ -191,9 +186,8 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         response = await llm.ainvoke(messages)
 
-        
         return {
             "lore_context": lore_context,
             "draft": response.content,
-            "revision_count": revision_count + 1
+            "revision_count": revision_count + 1,
         }

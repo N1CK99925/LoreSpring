@@ -1,6 +1,7 @@
-from neo4j import AsyncDriver, AsyncSession
+from neo4j import AsyncDriver, AsyncSession, Query
 import os
 from neo4j.exceptions import AuthError, ServiceUnavailable
+
 
 class GraphService:
     def __init__(self):
@@ -12,13 +13,17 @@ class GraphService:
     async def connect(self):
         """Initialize Neo4j driver"""
         from neo4j import AsyncGraphDatabase
-        self.driver = AsyncGraphDatabase.driver(self.uri, auth=(self.user, self.password))
+
+        self.driver = AsyncGraphDatabase.driver(
+            self.uri, auth=(self.user, self.password)
+        )
 
     async def close(self):
         """Close driver"""
         if self.driver:
             await self.driver.close()
 
+    # used in the '/debug/neo4j' route to test the connection in `graph_viz.py` file (me)
     async def test_connection(self):
         """Run a minimal query to verify the Neo4j connection."""
         if not self.driver:
@@ -39,41 +44,62 @@ class GraphService:
 
     async def get_graph_data(self, user_id: int, project_id: str):
         """Query nodes and edges from Neo4j"""
+        workspace_label = f"{user_id}:{project_id}"
         try:
             async with self.driver.session() as session:
                 # Get all nodes - no workspace filter for now
-                nodes_result = await session.run("MATCH (n) RETURN n LIMIT 200")
+                nodes_result = await session.run(
+                    Query(
+                        f"""
+                    MATCH (n:`{workspace_label}`)
+                    RETURN n
+                    LIMIT 200
+                    """
+                    )
+                )
                 nodes = []
                 async for record in nodes_result:
                     node = record["n"]
                     node_dict = dict(node)
-                    
+
                     # Extract displayable label
                     label = (
-                        node_dict.get("entity_id") or 
-                        node_dict.get("name") or 
-                        node_dict.get("label") or 
-                        str(node.element_id)[:20]
+                        node_dict.get("entity_id")
+                        or node_dict.get("name")
+                        or node_dict.get("label")
+                        or str(node.element_id)[:20]
                     )
-                    
-                    nodes.append({
-                        "id": str(node.element_id),
-                        "label": str(label),
-                        "type": str(node_dict.get("entity_type", "unknown")),
-                        "attributes": node_dict
-                    })
-                
-                # Get all relationships
-                edges_result = await session.run("MATCH (a)-[r]->(b) RETURN a, b, r LIMIT 200")
+
+                    nodes.append(
+                        {
+                            "id": str(node.element_id),
+                            "label": str(label),
+                            "type": str(node_dict.get("entity_type", "unknown")),
+                            "attributes": node_dict,
+                        }
+                    )
+
+                    # Get all relationships
+                    edges_result = await session.run(
+                        Query(
+                            f"""
+                        MATCH (a:`{workspace_label}`)-[r]->(b:`{workspace_label}`)
+                        RETURN a, r, b
+                        LIMIT 200
+                        """
+                        )
+                    )
                 links = []
                 async for record in edges_result:
-                    links.append({
-                        "source": str(record["a"].element_id),
-                        "target": str(record["b"].element_id),
-                        "label": str(dict(record["r"]).get("description", "")),
-                        "attributes": dict(record["r"])
-                    })
-                
+                    links.append(
+                        {
+                            "source": str(record["a"].element_id),
+                            "target": str(record["b"].element_id),
+                            "label": str(dict(record["r"]).get("description", "")),
+                            "attributes": dict(record["r"]),
+                        }
+                    )
+                # TODO: add indexing to the workspace_id
                 return {"nodes": nodes, "links": links}
         except Exception as e:
             print(f"Graph query error: {e}")

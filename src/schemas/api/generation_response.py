@@ -7,5 +7,5 @@ class GenerationResponse(BaseModel):
     final_chapter: str
     quality_score: float
     revision_count: int
-    
+
     model_config = ConfigDict(strict=True)

@@ -23,12 +23,11 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
         return state
 
     lore_context = await query_lore(
-        user_id,project_id,
+        user_id,
+        project_id,
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
-        mode="hybrid"
+        mode="hybrid",
     )
-
-   
 
     system = """You are a senior literary editor specializing in fiction quality assessment.
 
@@ -93,8 +92,6 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
 
     except Exception as e1:
         print(f"revision node attempt 1 failed: {e1}, trying fallback...")
-
-       
 
         system_fallback = (
             "You are a JSON-only literary evaluation engine. "
@@ -194,7 +191,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt)
+                    HumanMessage(content=fallback_prompt),
                 ]
             )
 
@@ -214,19 +211,16 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
             state["should_revise"] = True
             return state
 
-  
     avg_score = sum(metrics_dict.values()) / len(metrics_dict) if metrics_dict else 0.0
-    
-    
+
     max_revisions = state.get("max_revisions", 2)
     threshold = state.get("quality_threshold", 6.5)
 
-    
     return {
         "revision_result": {
             "quality_metrics": metrics_dict,
-            "quality_feedback": quality_feedback
+            "quality_feedback": quality_feedback,
         },
         "quality_score": avg_score,
-        "should_revise": (avg_score < threshold and revision_count < max_revisions)
+        "should_revise": (avg_score < threshold and revision_count < max_revisions),
     }

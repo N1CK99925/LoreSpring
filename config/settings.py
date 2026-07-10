@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
+
 # from typing import Optional
 from urllib.parse import urlparse
+
 
 class Settings(BaseSettings):
     groq_api_key: str
@@ -8,8 +10,8 @@ class Settings(BaseSettings):
     # neo4j_user: str = "neo4j"
     # neo4j_pass: str = "password"
     # pinecone_api_key: str
-    # pinecone_env: str = "us-west1-gcp-free" 
-    postgres_url: str 
+    # pinecone_env: str = "us-west1-gcp-free"
+    postgres_url: str
     langsmith_tracing: bool | None = None
     langsmith_endpoint: str | None = None
     langsmith_api_key: str | None = None
@@ -18,12 +20,13 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
-    jina_api_key: str    
+    jina_api_key: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "ignore"
-        
+
     def get_postgres_config(self) -> dict:
         parsed = urlparse(self.postgres_url)
         return {
@@ -33,4 +36,6 @@ class Settings(BaseSettings):
             "POSTGRES_PASSWORD": parsed.password,
             "POSTGRES_DATABASE": parsed.path.lstrip("/"),
         }
+
+
 settings = Settings()

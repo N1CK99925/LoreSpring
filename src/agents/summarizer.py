@@ -22,9 +22,10 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     user_id = state.get("user_id")
     project_id = state.get("project_id")
     lore_context = await query_lore(
-        user_id,project_id,
+        user_id,
+        project_id,
         f"Relevant lore for Chapter {chapter_number}, user direction: {user_direction}",
-        mode="hybrid"
+        mode="hybrid",
     )
 
     system = """You are a structured narrative summarization engine for long-form fiction.
@@ -77,8 +78,6 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
     except Exception as e1:
         print(f"summary node attempt 1 failed: {e1}, trying fallback...")
-
-       
 
         system_fallback = (
             "You are a JSON-only narrative summarization engine. "
@@ -162,7 +161,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt)
+                    HumanMessage(content=fallback_prompt),
                 ]
             )
             repaired = repair_json(raw_response.content)
@@ -177,7 +176,6 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         except Exception as e2:
             print(f"summary node attempt 2 failed: {e2}, using fallback defaults")
 
-    
     new_summary = {
         "chapter_number": chapter_number,
         "summary": chapter_summary,
@@ -185,17 +183,14 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         "character_updates": character_updates,
     }
 
-   
     existing_summaries = state.get("previous_chapter_summary", [])
     updated_summaries = [
-        s for s in existing_summaries 
-        if s.get("chapter_number") != chapter_number
+        s for s in existing_summaries if s.get("chapter_number") != chapter_number
     ]
     updated_summaries.append(new_summary)
 
-   
     return {
-        "final_chapter" : state.get("draft", ""),
+        "final_chapter": state.get("draft", ""),
         "previous_chapter_summary": updated_summaries,
-        "chapter_summary": chapter_summary
+        "chapter_summary": chapter_summary,
     }
