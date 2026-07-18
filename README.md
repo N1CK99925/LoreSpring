@@ -223,5 +223,4 @@ When a chapter is generated, the app runs a LangGraph workflow that performs the
 - If migrations fail, check the PostgreSQL connection strings and ensure the database user has permission to create tables.
 
 ## License
-
-This repository does not currently declare a license file. If you plan to redistribute or reuse the project publicly, add an explicit license before deployment.
+Yea I got License
