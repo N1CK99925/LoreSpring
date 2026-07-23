@@ -15,7 +15,7 @@ async def groq_llm_func(
     if "response_format" in kwargs:
         kwargs["response_format"] = {"type": "json_object"}
     return await openai_complete_if_cache(
-        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "openai/gpt/oss-120b",
         prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
