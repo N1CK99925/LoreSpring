@@ -47,13 +47,51 @@ async def get_chapter_by_number(
     return chapter
 
 
-async def delete_chapter():
-    pass
+async def delete_chapter(
+    session: AsyncSession, project_id: str, user_id: int, chapter_number: int
+):
+    stmt = (
+        delete(Chapter)
+        .where(
+            Chapter.project_id == project_id,
+            Chapter.chapter_number == chapter_number,
+        )
+        .where(
+            Chapter.project_id.in_(select(Project.id).where(Project.user_id == user_id))
+        )
+    )
+
+    _ = await session.execute(stmt)
+    await session.commit()
 
 
-async def delete_chapter_summary():
-    pass
+async def delete_chapter_summary(
+    session: AsyncSession, project_id: str, user_id: int, chapter_id: int
+):
+    stmt = (
+        delete(ChapterSummary)
+        .where(ChapterSummary.chapter_id == chapter_id)
+        .where(
+            ChapterSummary.chapter_id.in_(
+                select(Chapter.id)
+                .join(Project)
+                .where(Chapter.project_id == project_id, Project.user_id == user_id)
+            )
+        )
+    )
+
+    _ = await session.execute(stmt)
+    await session.commit()
 
 
 async def update_chapter():
+    pass
+
+
+# TODO: shift from postgres file and reviw.py file
+async def save_chapter():
+    pass
+
+
+async def save_chapter_summary():
     pass

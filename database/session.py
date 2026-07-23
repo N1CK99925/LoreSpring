@@ -8,8 +8,8 @@ engine = create_async_engine(
     connect_args={"ssl": True, "statement_cache_size": 0},
     pool_recycle=3600,  # ← Recycle connections every hour
     pool_pre_ping=True,  # ← Ping connection before use
-    pool_size=10,  # ← Connection pool size
-    max_overflow=20,  # ← Max additional connections
+    pool_size=5,  # ← Connection pool size
+    max_overflow=5,  # ← Max additional connections
 )
 # TODO: remove prepared_statement_cache_size in prod
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
