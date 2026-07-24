@@ -18,14 +18,22 @@ async def lifespan(app):
         kwargs={"autocommit": True},
         min_size=1,
         max_size=4,
+        max_idle=300,
+        max_lifetime=1800,
+        check=AsyncConnectionPool.check_connection,
         open=False,
     )
+
     await pool.open()
+
     checkpointer = AsyncPostgresSaver(pool)
     await checkpointer.setup()
+
     app.state.checkpointer = checkpointer
     app.state.graph_service = graph_service
+
     await graph_service.connect()
+
     try:
         yield
     finally:
