@@ -1,24 +1,166 @@
 @import "tailwindcss";
-/* index.css - Add to your existing Tailwind imports */
-@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-crystal-light: #6ee7b7;
+  --color-gold-500: #b08947;
+
+  --color-surface: #f4f1eb;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: rgba(5, 150, 105, 0.04);
+  --color-text-primary: #1a1814;
+  --color-text-secondary: #6b6860;
+  --color-text-muted: #8a857d;
+  --color-border-subtle: rgba(5, 150, 105, 0.08);
+  --color-border-hover: rgba(5, 150, 105, 0.2);
+}
 
 @layer base {
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    font-family: 'DM Sans', system-ui, sans-serif;
-  }
-  
-  .font-serif {
-    font-family: 'Fraunces', Georgia, serif;
-  }
-}
-
-@layer components {
-  .animate-pulse {
-    animation: pulse 1.4s ease-in-out infinite;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
   }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+/* ============================================
+   ANIMATION KEYFRAMES
+   ============================================ */
+@keyframes heroEnter {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroImageEnter {
+  from { opacity: 0; transform: scale(0.95) translateY(16px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.25); }
+  50% { box-shadow: 0 0 20px 4px rgba(5, 150, 105, 0.1); }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(6px, -10px) rotate(3deg); }
+  66% { transform: translate(-4px, -6px) rotate(-2deg); }
+}
+
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+@layer utilities {
+  .hero-enter {
+    animation: heroEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .hero-enter-delay-1 { animation-delay: 0.15s; }
+  .hero-enter-delay-2 { animation-delay: 0.3s; }
+  .hero-enter-delay-3 { animation-delay: 0.45s; }
+
+  .anim-float { animation: float 4s ease-in-out infinite; }
+  .anim-float-slow { animation: floatSlow 6s ease-in-out infinite; }
+  .anim-drift { animation: drift 8s ease-in-out infinite; }
+  .anim-drift-delayed { animation: drift 10s ease-in-out infinite 2s; }
+  .anim-spin-slow { animation: spin-slow 50s linear infinite; }
+  .anim-marquee { animation: marquee 25s linear infinite; }
+  .anim-pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+  .anim-hero-image { animation: heroImageEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+
+  .reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+  .reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+  .grain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-left, .reveal-right { transition: none; opacity: 1; transform: none; }
+  .hero-enter { animation: none; opacity: 1; }
+  .anim-float, .anim-float-slow, .anim-drift, .anim-drift-delayed,
+  .anim-spin-slow, .anim-marquee, .anim-pulse-glow, .anim-hero-image {
+    animation: none;
+  }
 }
