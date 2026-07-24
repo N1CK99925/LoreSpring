@@ -8,6 +8,7 @@ import { generateChapter } from '../api/generate'
 import type { Chapter, Project as ProjectType } from '../types'
 import { ErrorBanner } from '../components/ErrorBanner'
 
+
 export default function Project() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -22,13 +23,11 @@ export default function Project() {
   const [maxRevisions, setMaxRevisions] = useState(2)
   const [loadingChapters, setLoadingChapters] = useState(false)
 
-  // Refetch chapters function
   const loadChapters = async (projectId: string) => {
     try {
       setLoadingChapters(true)
       const chaps = await getChapters(projectId)
       setChapters(chaps)
-      // Auto-select the most recent chapter
       if (chaps.length > 0) {
         setSelectedChapter(chaps[chaps.length - 1])
       }
@@ -41,7 +40,6 @@ export default function Project() {
 
   useEffect(() => {
     if (!id) return
-    
     const loadData = async () => {
       try {
         const proj = await getProject(id)
@@ -51,267 +49,162 @@ export default function Project() {
         setError(err.message || "Failed to load project")
       }
     }
-    
     loadData()
   }, [id])
 
   const handleGenerate = async () => {
     if (!id || !project) return
-    
-    if (!direction.trim()) {
-      setError("Please enter a direction")
-      return
-    }
-    
-    if (direction.trim().length < 10) {
-      setError("Direction must be at least 10 characters")
-      return
-    }
-    
-    if (!project.genre || !project.tone) {
-      setError("Project metadata missing. Refresh the page.")
-      return
-    }
-    
+    if (!direction.trim()) { setError("Please enter a direction"); return }
+    if (direction.trim().length < 10) { setError("Direction must be at least 10 characters"); return }
+    if (!project.genre || !project.tone) { setError("Project metadata missing. Refresh the page."); return }
     try {
-      setStatus('running')
-      setError('')
-      
-      await generateChapter(
-        id,
-        chapterNumber,
-        direction,
-        {
-          genre: project.genre,
-          tone: project.tone,
-          style: project.style
-        },
-        qualityThreshold,
-        maxRevisions
-      )
-      // Refetch chapters to get the newly generated one
+      setStatus('running'); setError('')
+      await generateChapter(id, chapterNumber, direction, { genre: project.genre, tone: project.tone, style: project.style }, qualityThreshold, maxRevisions)
       await loadChapters(id)
-      setStatus('awaiting_review')
-      setDirection('')
+      setStatus('awaiting_review'); setDirection('')
       const threadId = `${id}-chapter-${chapterNumber}`
       navigate(`/review/${threadId}`)
     } catch (err: any) {
-      setStatus('error')
-      setError(err.message || "Generation failed")
+      setStatus('error'); setError(err.message || "Generation failed")
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7faf7] flex flex-col h-screen overflow-hidden">
-      {error && (
-        <ErrorBanner 
-          message={error} 
-          onDismiss={() => setError('')} 
-        />
-      )}
+    <div className="min-h-screen bg-surface flex flex-col h-screen overflow-hidden">
+      <div className="grain-overlay" />
+      {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
       {/* Topbar */}
-      <div className="h-12 bg-white border-b border-[#c8e6cc] flex items-center px-5 gap-2 shrink-0">
-        <span 
-          className="font-serif text-base text-[#0d8c4a] font-semibold cursor-pointer"
-          onClick={() => navigate('/dashboard')}
-        >
-          LoreSpring
+      <div className="h-12 bg-surface-card border-b border-border-subtle flex items-center px-5 gap-2 shrink-0 relative z-10">
+        <span className="font-serif text-base text-emerald-700 font-semibold cursor-pointer flex items-center gap-2"
+          onClick={() => navigate('/dashboard')}>
+          <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain" /> LoreSpring
         </span>
-        <span className="text-[#6a9e72] text-sm mx-1">/</span>
-        <span className="text-[#3d6b48] text-sm">{project?.title}</span>
-        <div className="w-px h-5 bg-[#c8e6cc] mx-1"></div>
-        <button className="border border-[#8ec99a] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all bg-[#eef6ef]">
-          ✦ Write
+        <span className="text-text-muted text-sm mx-1">/</span>
+        <span className="text-text-secondary text-sm">{project?.title}</span>
+        <div className="w-px h-5 bg-border-subtle mx-1"></div>
+        <button className="border border-emerald-500 rounded-full px-3.5 py-1 text-xs text-text-secondary cursor-pointer hover:bg-surface-muted transition-all bg-surface-muted">
+          Write
         </button>
-        <button disabled className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#c8e6cc] cursor-not-allowed opacity-50">
-          ↺ Rewrite
+        <button disabled className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-muted cursor-not-allowed opacity-50">
+          Rewrite
         </button>
-        <button disabled className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#c8e6cc] cursor-not-allowed opacity-50">
-          ◎ Describe
+        <button disabled className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-muted cursor-not-allowed opacity-50">
+          Describe
         </button>
-        <button 
-          className="border border-[#c8e6cc] rounded-full px-3.5 py-1 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all"
-          onClick={() => navigate(`/graph/${id}`)}
-        >
-          ⬡ Graph
+        <button className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-secondary cursor-pointer hover:border-emerald-500 hover:bg-surface-muted transition-all"
+          onClick={() => navigate(`/graph/${id}`)}>
+          Graph
         </button>
         <div className="flex-1"></div>
-        <span className="text-xs text-[#0d8c4a]">✓ Saved</span>
+        <span className="text-xs text-emerald-700">Saved</span>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar - Chapters */}
-        <div className="w-48.5 bg-white border-r border-[#c8e6cc] flex flex-col p-4 gap-2 shrink-0 overflow-y-auto">
-          <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Chapters</div>
+        <div className="w-[194px] bg-surface-card border-r border-border-subtle flex flex-col p-4 gap-2 shrink-0 overflow-y-auto relative z-10">
+          <div className="text-text-muted text-[10px] uppercase tracking-wider">Chapters</div>
           <div className="flex flex-col gap-1.5">
             {chapters.map(c => (
-              <div
-                key={c.chapter_number}
-                onClick={() => setSelectedChapter(c)}
-                className={`bg-[#f7faf7] border rounded-lg px-3 py-2 text-sm cursor-pointer transition-all ${
+              <div key={c.chapter_number} onClick={() => setSelectedChapter(c)}
+                className={`bg-surface border rounded-lg px-3 py-2 text-sm cursor-pointer transition-all ${
                   selectedChapter?.chapter_number === c.chapter_number
-                    ? 'border-[#8ec99a] bg-[#eef6ef]'
-                    : 'border-[#c8e6cc] hover:border-[#8ec99a] hover:bg-[#eef6ef]'
-                }`}
-              >
-                <div className="text-[#1a3320] text-xs font-medium">Chapter {c.chapter_number}</div>
-                <div className="text-[#6a9e72] text-xs">Score: {c.quality_score ?? 'N/A'}</div>
+                    ? 'border-emerald-500 bg-surface-muted'
+                    : 'border-border-subtle hover:border-emerald-500 hover:bg-surface-muted'
+                }`}>
+                <div className="text-text-primary text-xs font-medium">Chapter {c.chapter_number}</div>
+                <div className="text-text-muted text-xs">Score: {c.quality_score ?? 'N/A'}</div>
               </div>
             ))}
           </div>
           <div className="mt-auto pt-4">
-            <div 
-              className="border border-[#c8e6cc] rounded-lg px-3 py-2 text-xs text-[#3d6b48] cursor-pointer hover:border-[#8ec99a] hover:bg-[#eef6ef] transition-all mb-2"
-              onClick={() => navigate(`/graph/${id}`)}
-            >
-              ⬡ Story graph
+            <div className="border border-border-subtle rounded-lg px-3 py-2 text-xs text-text-secondary cursor-pointer hover:border-emerald-500 hover:bg-surface-muted transition-all mb-2"
+              onClick={() => navigate(`/graph/${id}`)}>
+              Story graph
             </div>
-            <button 
-              className="bg-transparent border-none text-[#6a9e72] text-xs cursor-pointer hover:text-red-500 transition-colors"
-              onClick={() => navigate('/dashboard')}
-            >
-              ← Dashboard
+            <button className="bg-transparent border-none text-text-muted text-xs cursor-pointer hover:text-red-500 transition-colors"
+              onClick={() => navigate('/dashboard')}>
+              &larr; Dashboard
             </button>
           </div>
         </div>
 
         {/* Main content - Chapter text */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 relative z-10">
           {loadingChapters ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[#6a9e72] text-sm">Loading chapters...</p>
+              <p className="text-text-muted text-sm">Loading chapters...</p>
             </div>
           ) : selectedChapter ? (
             <>
-              <h2 className="font-serif text-2xl font-light text-[#1a3320] mb-2">
+              <h2 className="font-serif text-2xl font-light text-text-primary mb-2">
                 Chapter {selectedChapter.chapter_number}
               </h2>
-              <div className="inline-flex items-center gap-1.5 bg-[#d4f5ed] border border-[#22c9a0]/30 rounded-full px-3 py-1 text-xs text-[#0d8c6a] mb-5">
-                <span className="text-[#22c9a0]">◆</span> Quality score: {selectedChapter.quality_score}
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full px-3 py-1 text-xs text-emerald-700 mb-5">
+                <span className="text-emerald-500">Quality score: {selectedChapter.quality_score}</span>
               </div>
-              <p className="text-[#3d6b48] text-sm leading-relaxed whitespace-pre-wrap font-serif font-light tracking-wide">
+              <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap font-serif font-light tracking-wide">
                 {selectedChapter.final_chapter || "Chapter not yet generated"}
               </p>
               {status === 'awaiting_review' && selectedChapter.chapter_number === chapterNumber && (
-                <button
-                  className="mt-6 border border-[#0d8c4a] text-[#0d8c4a] rounded-lg px-4 py-2 text-sm cursor-pointer hover:bg-[#0d8c4a] hover:text-white transition-all"
-                  onClick={() => navigate(`/review/${id}-chapter-${chapterNumber}`)}
-                >
-                  Go to Review →
+                <button className="mt-6 border border-emerald-700 text-emerald-700 rounded-lg px-4 py-2 text-sm cursor-pointer hover:bg-emerald-700 hover:text-white transition-all"
+                  onClick={() => navigate(`/review/${id}-chapter-${chapterNumber}`)}>
+                  Go to Review &rarr;
                 </button>
               )}
             </>
           ) : (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[#6a9e72] text-sm">Select a chapter or generate a new one</p>
+              <p className="text-text-muted text-sm">Select a chapter or generate a new one</p>
             </div>
           )}
         </div>
 
         {/* Right panel - Generation Console */}
-        <div className="w-70 bg-white border-l border-[#c8e6cc] p-5 flex flex-col gap-3 shrink-0 overflow-y-auto">
-          <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider">Generation Console</div>
-
+        <div className="w-[280px] bg-surface-card border-l border-border-subtle p-5 flex flex-col gap-3 shrink-0 overflow-y-auto relative z-10">
+          <div className="text-text-muted text-[10px] uppercase tracking-wider">Generation Console</div>
           <div className="flex flex-col gap-1">
-            <label className="text-[#3d6b48] text-xs font-medium">Chapter number</label>
-            <input
-              type="number"
-              className="bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all"
-              value={chapterNumber}
-              onChange={e => setChapterNumber(Number(e.target.value))}
-              disabled={status === 'running'}
-            />
+            <label className="text-text-secondary text-xs font-medium">Chapter number</label>
+            <input type="number" value={chapterNumber}
+              onChange={e => setChapterNumber(Number(e.target.value))} disabled={status === 'running'}
+              className="bg-surface-muted border border-border-subtle rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-700/10 transition-all" />
           </div>
-
           <div className="flex flex-col gap-1">
-            <label className="text-[#3d6b48] text-xs font-medium">Direction</label>
-            <textarea
-              rows={5}
-              className="bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all resize-none"
-              placeholder="What should happen in this chapter?"
-              value={direction}
-              onChange={e => setDirection(e.target.value)}
-              disabled={status === 'running'}
-            />
+            <label className="text-text-secondary text-xs font-medium">Direction</label>
+            <textarea rows={5} placeholder="What should happen in this chapter?" value={direction}
+              onChange={e => setDirection(e.target.value)} disabled={status === 'running'}
+              className="bg-surface-muted border border-border-subtle rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-700/10 transition-all resize-none" />
           </div>
-
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-[#3d6b48] text-xs font-medium">Quality min</label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="10"
-                className="bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all"
-                value={qualityThreshold}
-                onChange={e => setQualityThreshold(Number(e.target.value))}
-                disabled={status === 'running'}
-              />
+              <label className="text-text-secondary text-xs font-medium">Quality min</label>
+              <input type="number" step="0.5" min="0" max="10" value={qualityThreshold}
+                onChange={e => setQualityThreshold(Number(e.target.value))} disabled={status === 'running'}
+                className="bg-surface-muted border border-border-subtle rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-700/10 transition-all" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[#3d6b48] text-xs font-medium">Max revisions</label>
-              <input
-                type="number"
-                className="bg-[#eef6ef] border border-[#c8e6cc] rounded-lg px-3 py-2 text-[#1a3320] text-sm outline-none focus:border-[#8ec99a] focus:ring-2 focus:ring-[#0d8c4a]/10 transition-all"
-                value={maxRevisions}
-                onChange={e => setMaxRevisions(Number(e.target.value))}
-                disabled={status === 'running'}
-              />
+              <label className="text-text-secondary text-xs font-medium">Max revisions</label>
+              <input type="number" value={maxRevisions}
+                onChange={e => setMaxRevisions(Number(e.target.value))} disabled={status === 'running'}
+                className="bg-surface-muted border border-border-subtle rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-700/10 transition-all" />
             </div>
           </div>
-
-          <button
-            className="bg-[#0d8c4a] text-white rounded-lg py-2.5 text-sm font-medium cursor-pointer hover:shadow-[0_4px_16px_rgba(13,140,74,0.3)] transition-all disabled:opacity-50 mt-1"
-            onClick={handleGenerate}
-            disabled={status === 'running'}
-          >
+          <button className="bg-emerald-700 text-white rounded-lg py-2.5 text-sm font-medium cursor-pointer hover:shadow-[0_4px_16px_rgba(13,140,74,0.3)] transition-all disabled:opacity-50 mt-1"
+            onClick={handleGenerate} disabled={status === 'running'}>
             {status === 'running' ? 'Generating...' : 'Generate chapter'}
           </button>
-
           <div className="flex items-center gap-2 text-xs">
-            {status === 'running' && (
-              <>
-                <div className="w-2 h-2 rounded-full bg-[#0d8c4a] animate-pulse" />
-                <span className="text-[#3d6b48]">Pipeline running...</span>
-              </>
-            )}
-            {status === 'awaiting_review' && (
-              <>
-                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                <span className="text-[#3d6b48]">Awaiting your review</span>
-              </>
-            )}
-            {status === 'idle' && (
-              <>
-                <div className="w-2 h-2 rounded-full bg-[#0d8c4a]" />
-                <span className="text-[#3d6b48]">Pipeline ready</span>
-              </>
-            )}
-            {status === 'error' && (
-              <>
-                <div className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="text-red-500 text-xs">Generation failed</span>
-              </>
-            )}
+            {status === 'running' && (<><div className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" /><span className="text-text-secondary">Pipeline running...</span></>)}
+            {status === 'awaiting_review' && (<><div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" /><span className="text-text-secondary">Awaiting your review</span></>)}
+            {status === 'idle' && (<><div className="w-2 h-2 rounded-full bg-emerald-700" /><span className="text-text-secondary">Pipeline ready</span></>)}
+            {status === 'error' && (<><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-red-500 text-xs">Generation failed</span></>)}
           </div>
-
-          <div className="border-t border-[#c8e6cc] pt-3 mt-1">
-            <div className="text-[#6a9e72] text-[10px] uppercase tracking-wider mb-2.5">Project Info</div>
+          <div className="border-t border-border-subtle pt-3 mt-1">
+            <div className="text-text-muted text-[10px] uppercase tracking-wider mb-2.5">Project Info</div>
             <div className="flex flex-col gap-1.5">
-              <div>
-                <div className="text-[#6a9e72] text-[10px] uppercase">Genre</div>
-                <div className="text-[#3d6b48] text-sm">{project?.genre || '—'}</div>
-              </div>
-              <div>
-                <div className="text-[#6a9e72] text-[10px] uppercase">Tone</div>
-                <div className="text-[#3d6b48] text-sm">{project?.tone || '—'}</div>
-              </div>
-              <div>
-                <div className="text-[#6a9e72] text-[10px] uppercase">Style</div>
-                <div className="text-[#3d6b48] text-sm">{project?.style || '—'}</div>
-              </div>
+              <div><div className="text-text-muted text-[10px] uppercase">Genre</div><div className="text-text-secondary text-sm">{project?.genre || '—'}</div></div>
+              <div><div className="text-text-muted text-[10px] uppercase">Tone</div><div className="text-text-secondary text-sm">{project?.tone || '—'}</div></div>
+              <div><div className="text-text-muted text-[10px] uppercase">Style</div><div className="text-text-secondary text-sm">{project?.style || '—'}</div></div>
             </div>
           </div>
         </div>
