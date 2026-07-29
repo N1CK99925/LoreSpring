@@ -35,7 +35,7 @@ export default function Login() {
         <circle cx="200" cy="200" r="60" fill="#047857" opacity="0.4"/>
       </svg>
 
-      <div className="bg-surface-card border border-border-subtle rounded-2xl p-11 w-[380px] relative z-10 shadow-lg">
+      <div className="bg-surface-card border border-border-subtle rounded-2xl p-8 md:p-11 w-full max-w-[380px] mx-4 md:mx-0 relative z-10 shadow-lg">
         <div className="flex items-center gap-3 mb-2">
           <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-12 h-12 object-contain anim-float" />
           <h1 className="font-serif text-[28px] font-semibold text-emerald-700">LoreSpring</h1>

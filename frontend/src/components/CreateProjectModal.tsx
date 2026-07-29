@@ -37,7 +37,7 @@ export const CreateProjectModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-surface-card border border-border-subtle rounded-xl p-8 w-[430px] shadow-xl">
+      <div className="bg-surface-card border border-border-subtle rounded-xl p-6 md:p-8 w-full max-w-[430px] mx-4 md:mx-0 shadow-xl">
         <h2 className="font-serif text-[21px] font-normal text-text-primary mb-4">New Project</h2>
         {error && (
           <ErrorBanner message={error} onDismiss={onErrorDismiss} variant="modal" />

@@ -22,6 +22,8 @@ export default function Project() {
   const [qualityThreshold, setQualityThreshold] = useState(7.0)
   const [maxRevisions, setMaxRevisions] = useState(2)
   const [loadingChapters, setLoadingChapters] = useState(false)
+  const [showChapters, setShowChapters] = useState(false)
+  const [showConsole, setShowConsole] = useState(false)
 
   const loadChapters = async (projectId: string) => {
     try {
@@ -75,15 +77,21 @@ export default function Project() {
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
       {/* Topbar */}
-      <div className="h-12 bg-surface-card border-b border-border-subtle flex items-center px-5 gap-2 shrink-0 relative z-10">
-        <span className="font-serif text-base text-emerald-700 font-semibold cursor-pointer flex items-center gap-2"
+      <div className="h-12 bg-surface-card border-b border-border-subtle flex items-center px-3 md:px-5 gap-1 md:gap-2 shrink-0 relative z-10">
+        <button className="md:hidden bg-transparent border border-border-subtle rounded-lg p-1.5 cursor-pointer hover:bg-surface-muted transition-colors mr-1"
+          onClick={() => setShowChapters(!showChapters)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-secondary">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="font-serif text-sm md:text-base text-emerald-700 font-semibold cursor-pointer flex items-center gap-2"
           onClick={() => navigate('/dashboard')}>
-          <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain" /> LoreSpring
+          <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-5 md:w-6 h-5 md:h-6 object-contain" /> <span className="hidden md:inline">LoreSpring</span>
         </span>
         <span className="text-text-muted text-sm mx-1">/</span>
-        <span className="text-text-secondary text-sm">{project?.title}</span>
+        <span className="text-text-secondary text-xs md:text-sm truncate max-w-[100px] md:max-w-none">{project?.title}</span>
         <div className="w-px h-5 bg-border-subtle mx-1"></div>
-        <button className="border border-emerald-500 rounded-full px-3.5 py-1 text-xs text-text-secondary cursor-pointer hover:bg-surface-muted transition-all bg-surface-muted">
+        <button className="border border-emerald-500 rounded-full px-2 md:px-3.5 py-1 text-[10px] md:text-xs text-text-secondary cursor-pointer hover:bg-surface-muted transition-all bg-surface-muted">
           Write
         </button>
         <button disabled className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-muted cursor-not-allowed opacity-50">
@@ -92,17 +100,24 @@ export default function Project() {
         <button disabled className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-muted cursor-not-allowed opacity-50">
           Describe
         </button>
-        <button className="border border-border-subtle rounded-full px-3.5 py-1 text-xs text-text-secondary cursor-pointer hover:border-emerald-500 hover:bg-surface-muted transition-all"
+        <button className="border border-border-subtle rounded-full px-2 md:px-3.5 py-1 text-[10px] md:text-xs text-text-secondary cursor-pointer hover:border-emerald-500 hover:bg-surface-muted transition-all"
           onClick={() => navigate(`/graph/${id}`)}>
           Graph
         </button>
         <div className="flex-1"></div>
+        <button className="md:hidden bg-transparent border border-border-subtle rounded-lg p-1.5 cursor-pointer hover:bg-surface-muted transition-colors mr-1"
+          onClick={() => setShowConsole(!showConsole)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-700">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
         <span className="text-xs text-emerald-700">Saved</span>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar - Chapters */}
-        <div className="w-[194px] bg-surface-card border-r border-border-subtle flex flex-col p-4 gap-2 shrink-0 overflow-y-auto relative z-10">
+        {showChapters && <div className="sidebar-backdrop md:hidden" onClick={() => setShowChapters(false)} />}
+        <div className={`w-[194px] bg-surface-card border-r border-border-subtle flex flex-col p-4 gap-2 shrink-0 overflow-y-auto relative z-10 sidebar-overlay md:!static md:!transform-none ${showChapters ? 'open' : ''}`}>
           <div className="text-text-muted text-[10px] uppercase tracking-wider">Chapters</div>
           <div className="flex flex-col gap-1.5">
             {chapters.map(c => (
@@ -130,7 +145,7 @@ export default function Project() {
         </div>
 
         {/* Main content - Chapter text */}
-        <div className="flex-1 overflow-y-auto p-8 relative z-10">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
           {loadingChapters ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-text-muted text-sm">Loading chapters...</p>
@@ -161,7 +176,8 @@ export default function Project() {
         </div>
 
         {/* Right panel - Generation Console */}
-        <div className="w-[280px] bg-surface-card border-l border-border-subtle p-5 flex flex-col gap-3 shrink-0 overflow-y-auto relative z-10">
+        {showConsole && <div className="sidebar-backdrop md:hidden" onClick={() => setShowConsole(false)} />}
+        <div className={`w-[280px] bg-surface-card border-l border-border-subtle p-5 flex flex-col gap-3 shrink-0 overflow-y-auto relative z-10 panel-drawer md:!static md:!transform-none ${showConsole ? 'open' : ''}`}>
           <div className="text-text-muted text-[10px] uppercase tracking-wider">Generation Console</div>
           <div className="flex flex-col gap-1">
             <label className="text-text-secondary text-xs font-medium">Chapter number</label>

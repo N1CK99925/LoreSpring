@@ -32,7 +32,7 @@ export default function Register() {
         <path d="M175 25L230 90L310 70L265 155L340 175L260 205L290 290L175 245L60 290L90 205L10 175L85 155L40 70L120 90Z" fill="#34d399"/>
       </svg>
 
-      <div className="bg-surface-card border border-border-subtle rounded-2xl p-11 w-[380px] relative z-10 shadow-lg">
+      <div className="bg-surface-card border border-border-subtle rounded-2xl p-8 md:p-11 w-full max-w-[380px] mx-4 md:mx-0 relative z-10 shadow-lg">
         <div className="flex items-center gap-3 mb-2">
           <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-12 h-12 object-contain anim-float" />
           <h1 className="font-serif text-[28px] font-semibold text-emerald-700">LoreSpring</h1>
