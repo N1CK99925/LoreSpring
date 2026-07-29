@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Project from './pages/Project'
 import Review from './pages/Review'
 import GraphPage from './pages/GraphPage'
+import PipelinePage from './pages/PipelinePage'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/project/:id" element={<Project />} />
         <Route path="/review/:thread_id" element={<Review />} />
         <Route path="/graph/:projectId" element={<GraphPage />} />
+        <Route path="/pipeline" element={<PipelinePage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

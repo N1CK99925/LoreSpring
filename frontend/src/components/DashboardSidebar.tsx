@@ -7,12 +7,16 @@ interface DashboardSidebarProps {
   loading: boolean
   onNewProject: () => void
   onLogout: () => void
+  isOpen?: boolean
+  onToggle?: () => void
 }
 
-export const DashboardSidebar = ({ projects, loading, onNewProject, onLogout }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({ projects, loading, onNewProject, onLogout, isOpen, onToggle }: DashboardSidebarProps) => {
   const navigate = useNavigate()
   return (
-    <div className="w-56 bg-surface-card border-r border-border-subtle flex flex-col p-5 gap-2.5 shrink-0">
+    <>
+      {isOpen && <div className="sidebar-backdrop md:hidden" onClick={onToggle} />}
+      <div className={`w-56 bg-surface-card border-r border-border-subtle flex flex-col p-5 gap-2.5 shrink-0 ${isOpen ? 'open' : ''} sidebar-overlay md:!static md:!transform-none`}>
       <div className="flex items-center gap-3 text-emerald-700 text-[21px] font-semibold font-serif cursor-pointer hover:opacity-80 transition-opacity mb-1"
         onClick={() => navigate('/dashboard')}>
         <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain anim-float" />
@@ -45,5 +49,6 @@ export const DashboardSidebar = ({ projects, loading, onNewProject, onLogout }: 
         </button>
       </div>
     </div>
+    </>
   )
 }

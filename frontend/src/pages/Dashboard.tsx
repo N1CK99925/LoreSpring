@@ -12,6 +12,7 @@ export default function Dashboard() {
   const { projects, loading, error, fetchProjects, addProject, clearError } = useProjects()
   const form = useProjectForm()
   const [showModal, setShowModal] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -39,10 +40,17 @@ export default function Dashboard() {
         <ErrorBanner message={error} onDismiss={clearError} variant="page" />
       )}
       <DashboardSidebar projects={projects} loading={loading}
-        onNewProject={handleOpenModal} onLogout={handleLogout} />
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="mb-7">
-          <h1 className="font-serif text-[26px] font-light text-text-primary tracking-tight">Your Projects</h1>
+        onNewProject={handleOpenModal} onLogout={handleLogout}
+        isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex items-center gap-3 mb-7">
+          <button className="md:hidden bg-transparent border border-border-subtle rounded-lg p-2 cursor-pointer hover:bg-surface-muted transition-colors"
+            onClick={() => setSidebarOpen(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-secondary">
+              <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+          </button>
+          <h1 className="font-serif text-[22px] md:text-[26px] font-light text-text-primary tracking-tight">Your Projects</h1>
           <p className="text-text-secondary text-sm mt-1">
             {projects.length} {projects.length === 1 ? 'story' : 'stories'} in progress
           </p>
@@ -63,7 +71,7 @@ export default function Dashboard() {
             New project
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-3 mt-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
           <div className="bg-surface-card border border-border-subtle rounded-xl p-4 shadow-sm">
             <div className="text-text-muted text-xs">Projects</div>
             <div className="font-serif text-[28px] font-light text-text-primary mt-1">{projects.length}</div>

@@ -92,3 +92,6 @@ async def get_project_summaries(
         }
         for summary, chapter_number in rows
     ]
+
+
+# Get rid of dead code here

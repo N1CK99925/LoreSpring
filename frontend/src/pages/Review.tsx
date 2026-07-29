@@ -13,6 +13,8 @@ export default function Review() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [chapterText, setChapterText] = useState("")
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [showDecision, setShowDecision] = useState(false)
 
   useEffect(() => {
     if (!thread_id) return
@@ -68,17 +70,29 @@ export default function Review() {
   return (
     <div className="min-h-screen bg-surface flex flex-col h-screen overflow-hidden">
       <div className="grain-overlay" />
-      <div className="h-12 bg-surface-card border-b border-border-subtle flex items-center px-5 gap-2 shrink-0 relative z-10">
-        <span className="font-serif text-base text-emerald-700 font-semibold cursor-pointer flex items-center gap-2"
+      <div className="h-12 bg-surface-card border-b border-border-subtle flex items-center px-3 md:px-5 gap-1 md:gap-2 shrink-0 relative z-10">
+        <button className="md:hidden bg-transparent border border-border-subtle rounded-lg p-1.5 cursor-pointer hover:bg-surface-muted transition-colors mr-1"
+          onClick={() => setShowSidebar(!showSidebar)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-secondary">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="font-serif text-sm md:text-base text-emerald-700 font-semibold cursor-pointer flex items-center gap-2"
           onClick={() => navigate('/dashboard')}>
-          <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain" /> LoreSpring
+          <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-5 md:w-6 h-5 md:h-6 object-contain" /> <span className="hidden md:inline">LoreSpring</span>
         </span>
         <span className="text-text-muted text-sm mx-1">/</span>
-        <span className="text-text-secondary text-sm">Review · {reviewData ? `Chapter ${reviewData.chapter_number}` : 'Loading...'}</span>
+        <span className="text-text-secondary text-xs md:text-sm truncate max-w-[120px] md:max-w-none">Review · {reviewData ? `Ch ${reviewData.chapter_number}` : 'Loading...'}</span>
         <div className="flex-1"></div>
+        <button className="md:hidden bg-transparent border border-border-subtle rounded-lg p-1.5 cursor-pointer hover:bg-surface-muted transition-colors mr-1"
+          onClick={() => setShowDecision(!showDecision)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-700">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-          <span className="text-xs text-text-secondary">Awaiting decision</span>
+          <span className="text-[10px] md:text-xs text-text-secondary">Awaiting decision</span>
         </div>
       </div>
 
@@ -86,7 +100,8 @@ export default function Review() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-[195px] bg-surface-card border-r border-border-subtle flex flex-col p-4 gap-3 shrink-0 relative z-10">
+        {showSidebar && <div className="sidebar-backdrop md:hidden" onClick={() => setShowSidebar(false)} />}
+        <div className={`w-[195px] bg-surface-card border-r border-border-subtle flex flex-col p-4 gap-3 shrink-0 relative z-10 sidebar-overlay md:!static md:!transform-none ${showSidebar ? 'open' : ''}`}>
           <div className="flex items-center gap-2 text-emerald-700 text-lg font-semibold font-serif cursor-pointer" onClick={() => navigate('/dashboard')}>
             <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain anim-float" />
             LoreSpring
@@ -108,7 +123,7 @@ export default function Review() {
         </div>
 
         {/* Main content - Draft */}
-        <div className="flex-1 overflow-y-auto p-8 relative z-10">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
           <h2 className="font-serif text-2xl font-light text-text-primary mb-2">Draft Chapter</h2>
           <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full px-3 py-1 text-xs text-emerald-700 mb-5">
             Quality score: {reviewData?.quality_score || '—'} / 10
@@ -130,7 +145,8 @@ export default function Review() {
         </div>
 
         {/* Right panel - Review Decision */}
-        <div className="w-[280px] bg-surface-card border-l border-border-subtle p-5 flex flex-col gap-3 shrink-0 overflow-y-auto relative z-10">
+        {showDecision && <div className="sidebar-backdrop md:hidden" onClick={() => setShowDecision(false)} />}
+        <div className={`w-[280px] bg-surface-card border-l border-border-subtle p-5 flex flex-col gap-3 shrink-0 overflow-y-auto relative z-10 panel-drawer md:!static md:!transform-none ${showDecision ? 'open' : ''}`}>
           <div className="text-text-muted text-[10px] uppercase tracking-wider">Review Decision</div>
           <p className="text-text-secondary text-xs leading-relaxed">Approve to save this chapter, or reject to regenerate.</p>
           <button className="bg-emerald-700 text-white rounded-lg py-3 text-sm font-medium cursor-pointer hover:shadow-[0_4px_16px_rgba(13,140,74,0.3)] transition-all disabled:opacity-50"

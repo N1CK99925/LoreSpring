@@ -43,6 +43,7 @@ export default function GraphPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!projectId) { setError("Project ID not found. Please navigate from the dashboard."); setLoading(false); return }
@@ -69,7 +70,8 @@ export default function GraphPage() {
     <div className="w-screen h-screen bg-surface flex overflow-hidden">
       <div className="grain-overlay" />
       {/* SIDEBAR */}
-      <div className="w-[320px] border-r border-border-subtle bg-surface-card/80 backdrop-blur-md p-5 flex flex-col relative z-10">
+      {sidebarOpen && <div className="sidebar-backdrop md:hidden" onClick={() => setSidebarOpen(false)} />}
+      <div className={`w-[280px] md:w-[320px] border-r border-border-subtle bg-surface-card/80 backdrop-blur-md p-5 flex flex-col relative z-10 sidebar-overlay md:!static md:!transform-none ${sidebarOpen ? 'open' : ''}`}>
         <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate('/dashboard')}>
           <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-6 h-6 object-contain anim-float" />
@@ -127,6 +129,12 @@ export default function GraphPage() {
 
       {/* GRAPH */}
       <div className="flex-1 relative">
+        <button className="md:hidden absolute top-3 left-3 z-20 bg-surface-card/80 border border-border-subtle backdrop-blur-sm rounded-lg p-2 cursor-pointer hover:bg-surface-muted transition-colors"
+          onClick={() => setSidebarOpen(true)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-secondary">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-surface z-10">
             <div className="text-center">
