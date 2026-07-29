@@ -1,0 +1,40 @@
+from app.domain.lore import LoreResult
+from app.domain.continuity import ContinuityResult
+from app.domain.revision import RevisionResult
+from app.domain.summarizer import SummarizerResult
+from typing import Any, TypedDict, List, Dict
+
+
+class NarrativeState(TypedDict, total=False):
+    user_id: int
+    project_id: str
+    chapter_number: int
+    user_direction: str
+    metadata: Dict[str, str]
+
+    lore_context: str
+    previous_chapter_summary: SummarizerResult
+
+    draft: str
+
+    revision_count: int
+    max_revisions: int
+    should_revise: bool
+    revision_plan: Dict[str, Any]
+
+    continuity_issues: ContinuityResult
+    continuity_feedback: List[Dict[str, str]]
+
+    revision_result: RevisionResult
+
+    quality_score: float
+    quality_threshold: float
+
+    new_entities: Dict[str, str]
+
+    final_chapter: str
+    chapter_summary: str
+
+    human_approved: bool
+
+    revised_chapter_text: str

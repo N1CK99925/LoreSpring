@@ -1,0 +1,97 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
+from app.models.chapter import Chapter, ChapterSummary, Project
+
+
+async def get_chapters(session: AsyncSession, project_id: str, user_id: int):
+    result = await session.execute(
+        select(Chapter)
+        .join(Project)
+        .where(Chapter.project_id == project_id, Project.user_id == user_id)
+        .order_by(Chapter.chapter_number)
+    )
+    chapters = result.scalars().all()
+    return chapters
+
+
+async def get_chapter_summary(
+    session: AsyncSession, project_id: str, chapter_id: int, user_id: int
+):
+    result = await session.execute(
+        select(ChapterSummary)
+        .join(Chapter, ChapterSummary.chapter_id == Chapter.id)
+        .join(Project, Chapter.project_id == Project.id)
+        .where(
+            Chapter.project_id == project_id,
+            Chapter.id == chapter_id,
+            Project.user_id == user_id,
+        )
+    )
+    result = result.scalar_one_or_none()
+    return result
+
+
+async def get_chapter_by_number(
+    session: AsyncSession, project_id: str, chapter_number: int, user_id: int
+):
+    result = await session.execute(
+        select(Chapter)
+        .join(Project)
+        .where(
+            Chapter.project_id == project_id,
+            Chapter.chapter_number == chapter_number,
+            Project.user_id == user_id,
+        )
+    )
+    chapter = result.scalar_one_or_none()
+    return chapter
+
+
+async def delete_chapter(
+    session: AsyncSession, project_id: str, user_id: int, chapter_number: int
+):
+    stmt = (
+        delete(Chapter)
+        .where(
+            Chapter.project_id == project_id,
+            Chapter.chapter_number == chapter_number,
+        )
+        .where(
+            Chapter.project_id.in_(select(Project.id).where(Project.user_id == user_id))
+        )
+    )
+
+    _ = await session.execute(stmt)
+    await session.commit()
+
+
+async def delete_chapter_summary(
+    session: AsyncSession, project_id: str, user_id: int, chapter_id: int
+):
+    stmt = (
+        delete(ChapterSummary)
+        .where(ChapterSummary.chapter_id == chapter_id)
+        .where(
+            ChapterSummary.chapter_id.in_(
+                select(Chapter.id)
+                .join(Project)
+                .where(Chapter.project_id == project_id, Project.user_id == user_id)
+            )
+        )
+    )
+
+    _ = await session.execute(stmt)
+    await session.commit()
+
+
+async def update_chapter():
+    pass
+
+
+# TODO: shift from postgres file and reviw.py file
+async def save_chapter():
+    pass
+
+
+async def save_chapter_summary():
+    pass
