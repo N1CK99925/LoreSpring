@@ -142,6 +142,16 @@
   }
   .reveal-right.visible { opacity: 1; transform: translateX(0); }
 
+  .reveal-lift {
+    opacity: 0;
+    transform: translateY(48px);
+    filter: blur(8px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-lift.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+
   .grain-overlay {
     position: fixed;
     inset: 0;
@@ -157,7 +167,7 @@
    REDUCED MOTION
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .reveal-left, .reveal-right { transition: none; opacity: 1; transform: none; }
+  .reveal, .reveal-left, .reveal-right, .reveal-lift { transition: none; opacity: 1; transform: none; filter: none; }
   .hero-enter { animation: none; opacity: 1; }
   .anim-float, .anim-float-slow, .anim-drift, .anim-drift-delayed,
   .anim-spin-slow, .anim-marquee, .anim-pulse-glow, .anim-hero-image {

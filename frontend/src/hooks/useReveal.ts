@@ -13,7 +13,7 @@ export const useReveal = () => {
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     )
 
-    document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach((el) => {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-lift').forEach((el) => {
       observer.observe(el)
     })
 

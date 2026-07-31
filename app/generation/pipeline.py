@@ -22,28 +22,8 @@ async def run_pipeline(
         )
         app = build_graph(checkpointer)
 
-        initial_state = {
-            "user_id": user_id,  # ← ADD THIS
-            "project_id": request.project_id,
-            "chapter_number": request.chapter_number,
-            "user_direction": request.user_direction,
-            "metadata": request.metadata.model_dump(),
-            "quality_threshold": request.quality_threshold,
-            "max_revisions": request.max_revisions,
-            "lore_context": {},
-            "previous_chapter_summary": previous_memory,
-            "draft": "",
-            "revision_count": 0,
-            "new_entities": {},
-            "final_chapter": "",
-            "should_revise": False,
-        }
-
-        config = {
-            "configurable": {
-                "thread_id": f"{request.project_id}-chapter-{request.chapter_number}"
-            }
-        }
+        initial_state = build_initial_state(request, user_id, previous_memory)
+        config = build_config(request)
         print(
             f"Starting pipeline for user {user_id}, project {request.project_id}, chapter {request.chapter_number}"
         )
@@ -57,3 +37,30 @@ async def run_pipeline(
         chapter_number=request.chapter_number,
         project_id=request.project_id,
     )
+
+
+def build_initial_state(request: GenerationRequest, user_id: int, previous_memory):
+    return {
+        "user_id": user_id,
+        "project_id": request.project_id,
+        "chapter_number": request.chapter_number,
+        "user_direction": request.user_direction,
+        "metadata": request.metadata.model_dump(),
+        "quality_threshold": request.quality_threshold,
+        "max_revisions": request.max_revisions,
+        "lore_context": {},
+        "previous_chapter_summary": previous_memory,
+        "draft": "",
+        "revision_count": 0,
+        "new_entities": {},
+        "final_chapter": "",
+        "should_revise": False,
+    }
+
+
+def build_config(request: GenerationRequest) -> dict:
+    return {
+        "configurable": {
+            "thread_id": f"{request.project_id}-chapter-{request.chapter_number}"
+        }
+    }
