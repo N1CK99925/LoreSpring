@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getProject } from '../api/projects'
 import { getChapters } from '../api/chapters'
-import { generateChapter } from '../api/generate'
+import { streamGenerateChapter } from '../api/generate'
 import type { Chapter, Project as ProjectType } from '../types'
 import { ErrorBanner } from '../components/ErrorBanner'
+
+interface PipelineStep { node: string; label: string; state: 'active' | 'done' }
 
 
 export default function Project() {
@@ -24,6 +26,7 @@ export default function Project() {
   const [loadingChapters, setLoadingChapters] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
   const [showConsole, setShowConsole] = useState(false)
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([])
 
   const loadChapters = async (projectId: string) => {
     try {
@@ -60,12 +63,33 @@ export default function Project() {
     if (direction.trim().length < 10) { setError("Direction must be at least 10 characters"); return }
     if (!project.genre || !project.tone) { setError("Project metadata missing. Refresh the page."); return }
     try {
-      setStatus('running'); setError('')
-      await generateChapter(id, chapterNumber, direction, { genre: project.genre, tone: project.tone, style: project.style }, qualityThreshold, maxRevisions)
+      setStatus('running'); setError(''); setPipelineSteps([])
+      const steps: PipelineStep[] = []
+      let interrupted = false
+
+      for await (const event of streamGenerateChapter(id, chapterNumber, direction, { genre: project.genre, tone: project.tone, style: project.style }, qualityThreshold, maxRevisions)) {
+        if (event.event === 'interrupt') {
+          steps.push({ node: 'human_review', label: event.status || 'Awaiting human review', state: 'active' })
+          setPipelineSteps([...steps])
+          setStatus('awaiting_review')
+          interrupted = true
+          break
+        }
+        if (event.event === 'on_chain_start') {
+          steps.push({ node: event.node || '', label: event.status || '', state: 'active' })
+        } else if (event.event === 'on_chain_end') {
+          const idx = [...steps].reverse().findIndex(s => s.node === event.node && s.state === 'active')
+          if (idx !== -1) {
+            steps[steps.length - 1 - idx] = { ...steps[steps.length - 1 - idx], state: 'done' }
+          }
+        }
+        setPipelineSteps([...steps])
+      }
+
       await loadChapters(id)
-      setStatus('awaiting_review'); setDirection('')
-      const threadId = `${id}-chapter-${chapterNumber}`
-      navigate(`/review/${threadId}`)
+      setDirection('')
+      if (!interrupted) setStatus('awaiting_review')
+      navigate(`/review/${id}-chapter-${chapterNumber}`)
     } catch (err: any) {
       setStatus('error'); setError(err.message || "Generation failed")
     }
@@ -209,6 +233,19 @@ export default function Project() {
             onClick={handleGenerate} disabled={status === 'running'}>
             {status === 'running' ? 'Generating...' : 'Generate chapter'}
           </button>
+          {pipelineSteps.length > 0 && (
+            <div className="border-t border-border-subtle pt-3 mt-1">
+              <div className="text-text-muted text-[10px] uppercase tracking-wider mb-2.5">Pipeline</div>
+              <div className="flex flex-col gap-1.5">
+                {pipelineSteps.map((step, i) => (
+                  <div key={i} className={`flex items-center gap-2 text-xs ${step.state === 'active' ? 'text-emerald-700' : 'text-text-muted'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${step.state === 'active' ? 'bg-emerald-700 animate-pulse' : 'bg-emerald-500/50'}`} />
+                    <span className="truncate">{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-xs">
             {status === 'running' && (<><div className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" /><span className="text-text-secondary">Pipeline running...</span></>)}
             {status === 'awaiting_review' && (<><div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" /><span className="text-text-secondary">Awaiting your review</span></>)}

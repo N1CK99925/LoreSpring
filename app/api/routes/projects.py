@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.db.session import get_database
-from app.domain.generation_request import CreateProjectRequest
+from app.domain.generation_request import CreateProjectRequest, GenerationRequest
 from app.services.project_service import create_project, get_projects, get_project_by_id
+from app.generation.graph import build_graph
+from app.generation.graph_events import stream_pipeline_events
+from app.generation.pipeline import build_config, build_initial_state
+from app.db.repositories.postgres import get_project_summaries
 
 router = APIRouter(tags=["Projects"])
 
@@ -49,3 +56,34 @@ async def get_project_api(
 
 
 # TODO: change to responsemodels
+
+
+@router.post("/projects/{project_id}/chapters/{chapter_number}/generate/stream")
+async def generate_stream(
+    project_id: str,
+    chapter_number: int,
+    body: GenerationRequest,
+    req: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_database),
+):
+    if body.project_id != project_id or body.chapter_number != chapter_number:
+        raise HTTPException(
+            status_code=400,
+            detail="Path params must match request body (project_id, chapter_number)",
+        )
+
+    project = await get_project_by_id(db, project_id, user.id)
+    if not project:
+        raise HTTPException(status_code=403, detail="Project not found or access denied")
+
+    previous_memory = await get_project_summaries(db, project_id, user.id)
+    graph = build_graph(req.app.state.checkpointer)
+    input_state = build_initial_state(body, user.id, previous_memory)
+    config = build_config(body)
+
+    async def event_generator():
+        async for status in stream_pipeline_events(graph, input_state, config):
+            yield f"data: {json.dumps(status)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
