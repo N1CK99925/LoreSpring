@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
-import { Navbar } from './landing/Navbar'
+import { IslandNav } from './landing/Navbar'
 import { Hero } from './landing/Hero'
 import { Marquee } from './landing/Marquee'
 import { CircleDivider } from './landing/CircleDivider'
@@ -11,16 +11,19 @@ import { Footer } from './landing/Footer'
 export default function LandingPage() {
   const navigate = useNavigate()
   useReveal()
-
   const go = (path: string) => navigate(path)
 
   return (
-    <div className="bg-surface text-text-primary min-h-screen relative overflow-hidden">
+    <div className="relative isolate min-h-[100dvh] overflow-x-hidden bg-surface text-text-primary">
       <div className="grain-overlay" />
-      <div className="absolute top-[-15%] right-[-10%] w-[70vw] h-[70vw] bg-[radial-gradient(circle,rgba(5,150,105,0.07)_0%,transparent_60%)] pointer-events-none z-0" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle,rgba(176,137,71,0.05)_0%,transparent_55%)] pointer-events-none z-0" />
 
-      <Navbar onNavigate={go} />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="anim-drift absolute -right-40 -top-48 h-[34rem] w-[34rem] rounded-full bg-emerald-200/25 blur-[120px] will-change-transform" />
+        <div className="anim-drift-delayed absolute -left-44 bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-amber-200/20 blur-[120px] will-change-transform" />
+      </div>
+
+      <IslandNav onNavigate={go} variant="full" />
+
       <Hero onNavigate={go} />
       <Marquee />
       <CircleDivider />

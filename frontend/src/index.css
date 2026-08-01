@@ -14,14 +14,19 @@
   --color-crystal-light: #6ee7b7;
   --color-gold-500: #b08947;
 
-  --color-surface: #f4f1eb;
-  --color-surface-card: #ffffff;
+--color-surface: #f4efe4;        /* was #f4f1eb */
+--color-surface-card: #fdfbf7;   /* was #ffffff */
   --color-surface-muted: rgba(5, 150, 105, 0.04);
-  --color-text-primary: #1a1814;
-  --color-text-secondary: #6b6860;
-  --color-text-muted: #8a857d;
+--color-text-primary: #221d14;   /* was #1a1814 */
+--color-text-secondary: #6b6559; /* was #6b6860 */
+--color-text-muted: #a49c8b;     /* was #8a857d */
   --color-border-subtle: rgba(5, 150, 105, 0.08);
   --color-border-hover: rgba(5, 150, 105, 0.2);
+  /* In your @theme block, replace these three lines: */
+
+--color-text-muted: #a49c8b;     /* was #8a857d */
+
+/* everything else in @theme stays the same */
 }
 
 @layer base {
