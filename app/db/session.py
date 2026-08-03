@@ -4,7 +4,7 @@ from app.config.settings import settings
 
 engine = create_async_engine(
     settings.postgres_url,
-    echo=True,
+    echo=False,
     connect_args={"ssl": True, "statement_cache_size": 0},
     pool_recycle=3600,  # ← Recycle connections every hour
     pool_pre_ping=True,  # ← Ping connection before use

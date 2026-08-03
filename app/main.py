@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.config.settings import settings
 from app.api.routes import health, generate, review, auth, chapters, projects, graph_viz
+from app.api.routes import google_auth
 from fastapi.middleware.cors import CORSMiddleware
 from app.graph_db.neo4j import GraphService
 
@@ -43,6 +45,7 @@ async def lifespan(app):
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
+app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,6 +62,7 @@ app.include_router(health.router)
 app.include_router(generate.router)
 app.include_router(review.router)
 app.include_router(auth.router)
+app.include_router(google_auth.router)
 app.include_router(chapters.router)
 app.include_router(projects.router)
 app.include_router(graph_viz.router)

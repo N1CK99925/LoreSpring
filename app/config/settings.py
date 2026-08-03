@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
     jina_api_key: str
+    google_client_id: str
+    google_client_secret: str
+    frontend_url: str = "http://localhost:5173"
 
     class Config:
         env_file = ".env"

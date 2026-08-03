@@ -24,9 +24,7 @@ async def get_project_by_id(session: AsyncSession, project_id: str, user_id: int
 
 async def create_project(session: AsyncSession, user_id: int, metadata: dict):
     project = Project(
-        # if using UUID:
         id=str(uuid4()),
-        # if using auto-increment INT → REMOVE id entirely
         user_id=user_id,
         genre=metadata.get("genre", ""),
         title=metadata.get("title", ""),

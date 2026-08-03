@@ -52,7 +52,9 @@ psycopg[binary]
 pyjwt
 pwdlib[argon2]
 python-multipart
-
+authlib
+starlette-session
+itsdangerous
 # Packages discovered from import scan
 # runtime dependencies referenced in code but not listed above
 pydantic>=2.5.0
