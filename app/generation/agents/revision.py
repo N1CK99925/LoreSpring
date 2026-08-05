@@ -13,6 +13,10 @@ from langsmith import traceable
 async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     metadata = state.get("metadata", {})
     genre = metadata.get("genre", "fantasy")
+    tone = metadata.get("tone", "")
+    description = metadata.get("description", "")
+    tone_line = f"        Tone: {tone}\n" if tone else ""
+    premise_line = f"        Story premise: {description}\n" if description else ""
     draft_current = state.get("draft")
     revision_count = state.get("revision_count", 0)
     chapter_number = state.get("chapter_number")
@@ -61,7 +65,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     human = f"""<context>
         Chapter: {chapter_number}
         Genre: {genre}
-        Revision count: {revision_count}
+        {tone_line}{premise_line}        Revision count: {revision_count}
 
         User direction:
         {user_direction}
@@ -103,7 +107,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
         <context>
         Chapter: {chapter_number}
         Genre: {genre}
-        Revision count: {revision_count}
+        {tone_line}{premise_line}        Revision count: {revision_count}
 
         User direction:
         {user_direction}

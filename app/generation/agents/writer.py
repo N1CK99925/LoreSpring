@@ -29,7 +29,23 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
     project_id = state.get("project_id")
     metadata = state.get("metadata", {})
     genre = metadata.get("genre", "fantasy")
+    tone = metadata.get("tone", "")
+    description = metadata.get("description", "")
     revision_count = state.get("revision_count", 0)
+
+    premise_block = (
+        f"<story_premise>\n        {description}\n        </story_premise>\n\n        "
+        if description.strip()
+        else ""
+    )
+    premise_note = (
+        f"\n            Story Premise:\n            {description}"
+        if description.strip()
+        else ""
+    )
+    tone_directive = f"\n        - Tone: {tone}" if tone.strip() else ""
+    tone_phrase = f" in a {tone} tone" if tone.strip() else ""
+    tone_clause = f" and a {tone} tone" if tone.strip() else ""
 
     draft_current = state.get("draft", "")
 
@@ -68,13 +84,13 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         system = f"""
         You are a master {genre} fiction author with 20 years of experience crafting immersive, character-driven narratives.
 
-        <established_lore>
+        {premise_block}<established_lore>
         {lore_context}
         </established_lore>
 
         <writing_directives>
         - Length: 800-1200 words
-        - POV: Third person limited, past tense
+        - POV: Third person limited, past tense{tone_directive}
         - Ground every scene in specific sensory detail (what the POV character sees, hears, smells, feels)
         - Reveal character through action and dialogue, not exposition
         - Each paragraph should advance plot, deepen character, or build atmosphere — preferably all three
@@ -123,7 +139,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         revision_plan = build_revision_plan(revision_result)
 
         system = f"""
-            You are a senior developmental editor rewriting a {genre} chapter that failed quality review.
+            You are a senior developmental editor rewriting a {genre} chapter{tone_phrase} that failed quality review.
 
             <established_lore>
             {lore_context}
@@ -166,7 +182,8 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
         user = f"""
             Previous Chapter Summary:
             {prev_summary}
-            
+            {premise_note}
+
             Feedback Text
             {feedback_text}
 
@@ -177,7 +194,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             Rewrite this chapter entirely.
             Incorporate required improvements.
             Fix all continuity errors.
-            Maintain the {metadata.get("style", "literary")} style.
+            Maintain the {metadata.get("style", "literary")} style{tone_clause}.
 
             Output ONLY the revised chapter text.
             """

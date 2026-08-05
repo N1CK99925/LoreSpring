@@ -181,6 +181,62 @@
 }
 
 /* ============================================
+   EDITORIAL / WRITING-STUDIO PRIMITIVES
+   ============================================ */
+.drop-cap::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.6em;
+  line-height: 0.82;
+  float: left;
+  padding-right: 0.14em;
+  padding-top: 0.05em;
+  color: var(--color-emerald-700);
+}
+
+input[type='range'].ls-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(5, 150, 105, 0.12);
+  outline: none;
+  cursor: pointer;
+}
+input[type='range'].ls-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 9999px;
+  background: var(--color-surface-card);
+  border: 2px solid var(--color-emerald-700);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+input[type='range'].ls-range::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 6px rgba(5, 150, 105, 0.1);
+}
+input[type='range'].ls-range::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  border-radius: 9999px;
+  background: var(--color-surface-card);
+  border: 2px solid var(--color-emerald-700);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.ls-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(5, 150, 105, 0.25) transparent;
+}
+.ls-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+.ls-scroll::-webkit-scrollbar-thumb { background: rgba(5, 150, 105, 0.22); border-radius: 9999px; }
+.ls-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ============================================
    RESPONSIVE / MOBILE UTILITIES
    ============================================ */
 @layer utilities {

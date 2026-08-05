@@ -5,6 +5,7 @@ class StoryMetadata(BaseModel):
     genre: str = Field(min_length=1)
     tone: str = Field(min_length=1)
     style: str = Field(min_length=1)
+    description: str = Field(default="")
 
 
 class GenerationRequest(BaseModel):
