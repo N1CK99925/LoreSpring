@@ -30,8 +30,6 @@ class NarrativeState(TypedDict, total=False):
     quality_score: float
     quality_threshold: float
 
-    new_entities: Dict[str, str]
-
     final_chapter: str
     chapter_summary: str
 

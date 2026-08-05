@@ -52,7 +52,6 @@ def build_initial_state(request: GenerationRequest, user_id: int, previous_memor
         "previous_chapter_summary": previous_memory,
         "draft": "",
         "revision_count": 0,
-        "new_entities": {},
         "final_chapter": "",
         "should_revise": False,
     }

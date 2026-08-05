@@ -13,18 +13,6 @@ from app.config.settings import settings
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langsmith import traceable
 
-MEMORY_PATH = Path("memory.json")
-
-
-def load_memory():
-    if MEMORY_PATH.exists():
-        with open(MEMORY_PATH, "r") as f:
-            return json.load(f)
-    return []
-
-
-# TODO: refactor load_mameory to match the new database memory
-
 
 def route_after_review(state):
     revision_count = state.get("revision_count", 0)
@@ -68,44 +56,3 @@ def build_graph(checkpointer=None):
     workflow.add_edge("human_review", "lorekeeper")
     workflow.add_edge("lorekeeper", END)
     return workflow.compile(checkpointer=checkpointer)
-
-
-async def main():
-    app = build_graph()
-
-    previous_memory = load_memory()
-
-    initial_state = {
-        "project_id": "lore-test-123",
-        "chapter_number": 3,
-        "user_direction": "Sera returns to the real dock location alone at night. Someone is already there waiting — not smugglers, but a harbor inspector who reveals Dav is his informant, not the criminal. Sera's altered map may have just gotten someone killed.",
-        "metadata": {"genre": "fantasy", "tone": "dark", "style": "literary"},
-        "lore_context": {},
-        "previous_chapter_summary": previous_memory,
-        "draft": "",
-        "revision_count": 0,
-        "quality_threshold": 7.0,
-        "new_entities": {},
-        "final_chapter": "",
-        "max_revisions": 2,
-        "should_revise": False,
-    }
-
-    config = {"configurable": {"thread_id": "test-run-1"}}
-    print("run")
-
-    result = await app.ainvoke(initial_state, config=config)
-
-    memory = result.get("previous_chapter_summary", [])
-    with open(MEMORY_PATH, "w") as f:
-        json.dump(memory, f, indent=2)
-
-    print(result)
-    print(
-        f"Quality: {result.get('revision_result', {}).get('quality_feedback', 'N/A')}"
-    )
-    print(f"Final Chapter Preview:\n{result['draft']}...")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
