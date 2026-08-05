@@ -30,6 +30,7 @@ async def create_project(session: AsyncSession, user_id: int, metadata: dict):
         title=metadata.get("title", ""),
         tone=metadata.get("tone", ""),
         style=metadata.get("style", ""),
+        description=metadata.get("description", ""),
     )
 
     session.add(project)

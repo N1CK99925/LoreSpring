@@ -184,7 +184,7 @@ export default function Project() {
       const steps: PipelineStep[] = []
       let interrupted = false
 
-      for await (const event of streamGenerateChapter(id, chapterNumber, direction, { genre: project.genre, tone: project.tone, style: project.style }, qualityThreshold, maxRevisions)) {
+      for await (const event of streamGenerateChapter(id, chapterNumber, direction, { genre: project.genre, tone: project.tone, style: project.style, description: project.description || '' }, qualityThreshold, maxRevisions)) {
         if (event.event === 'interrupt') {
           steps.push({ node: 'human_review', label: event.status || 'Awaiting human review', state: 'active' })
           setPipelineSteps([...steps])
@@ -679,11 +679,12 @@ export default function Project() {
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
-              <div className="overflow-hidden transition-all duration-500" style={{ maxHeight: showInfo ? '180px' : '0', opacity: showInfo ? 1 : 0 }}>
+              <div className="overflow-hidden transition-all duration-500" style={{ maxHeight: showInfo ? '280px' : '0', opacity: showInfo ? 1 : 0 }}>
                 <div className="flex flex-col gap-2 pt-3">
                   <div className="flex justify-between text-xs"><span className="text-text-muted uppercase text-[9px] tracking-[0.18em] pt-0.5">Genre</span><span className="text-text-secondary">{project?.genre || '—'}</span></div>
                   <div className="flex justify-between text-xs"><span className="text-text-muted uppercase text-[9px] tracking-[0.18em] pt-0.5">Tone</span><span className="text-text-secondary">{project?.tone || '—'}</span></div>
                   <div className="flex justify-between text-xs"><span className="text-text-muted uppercase text-[9px] tracking-[0.18em] pt-0.5">Style</span><span className="text-text-secondary">{project?.style || '—'}</span></div>
+                  <div className="flex flex-col gap-1 text-xs"><span className="text-text-muted uppercase text-[9px] tracking-[0.18em] pt-0.5">Description</span><span className="text-text-secondary leading-relaxed">{project?.description || '—'}</span></div>
                 </div>
               </div>
             </div>

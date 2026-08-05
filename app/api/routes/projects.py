@@ -53,6 +53,7 @@ async def get_project_api(
         "genre": project.genre,
         "tone": project.tone,
         "style": project.style,
+        "description": project.description,
         "created_at": project.created_at,
     }
 
