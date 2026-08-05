@@ -17,6 +17,7 @@ async def get_or_create_project(
             title=metadata.get("title", ""),
             tone=metadata.get("tone", ""),
             style=metadata.get("style", ""),
+            description=metadata.get("description", ""),
         )
         session.add(project)
         await session.commit()

@@ -13,6 +13,7 @@ class Project(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     tone: Mapped[str] = mapped_column(String(255), nullable=False)
     style: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
