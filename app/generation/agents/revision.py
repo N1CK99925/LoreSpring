@@ -1,10 +1,9 @@
 from app.llm.client import get_llm, select_model
 from app.generation.state import NarrativeState
 from app.domain.revision import RevisionResult
+from app.generation.agents.utils import parse_json_content
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.memory.rag import query_lore
-from json_repair import repair_json
-import json
 
 from langsmith import traceable
 
@@ -195,8 +194,12 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
                 ]
             )
 
-            repaired = repair_json(raw_response.content)
-            parsed = json.loads(repaired)
+            content = (
+                raw_response.content
+                if isinstance(raw_response.content, str)
+                else ""
+            )
+            parsed = parse_json_content(content)
 
             result = RevisionResult(**parsed)
             metrics_dict = result.quality_metrics.model_dump()
