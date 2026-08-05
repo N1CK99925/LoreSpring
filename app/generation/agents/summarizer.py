@@ -1,10 +1,9 @@
 from app.llm.client import get_llm, select_model
 from app.generation.state import NarrativeState
 from app.domain.summarizer import SummarizerResult
+from app.generation.agents.utils import parse_json_content
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.memory.rag import query_lore
-from json_repair import repair_json
-import json
 
 from langsmith import traceable
 
@@ -164,8 +163,12 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
                     HumanMessage(content=fallback_prompt),
                 ]
             )
-            repaired = repair_json(raw_response.content)
-            parsed = json.loads(repaired)
+            content = (
+                raw_response.content
+                if isinstance(raw_response.content, str)
+                else ""
+            )
+            parsed = parse_json_content(content)
 
             result = SummarizerResult(**parsed)
             chapter_summary = result.chapter_summary

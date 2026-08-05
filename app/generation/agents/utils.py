@@ -1,4 +1,26 @@
+import json
 import re
+
+from json_repair import repair_json
+
+
+def parse_json_content(content: str) -> dict:
+    """Parse an LLM JSON response with repair + shape validation.
+
+    Raises ValueError when the content is empty or does not parse to a JSON
+    object, so callers can fall back to safe defaults instead of crashing on
+    malformed output.
+    """
+    if not content or not content.strip():
+        raise ValueError("LLM returned an empty response")
+
+    repaired = repair_json(content)
+    parsed = json.loads(repaired)
+
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Expected a JSON object, got {type(parsed).__name__}")
+
+    return parsed
 
 
 def build_revision_plan(

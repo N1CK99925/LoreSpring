@@ -22,7 +22,14 @@ async def lore_keeper_node(state: NarrativeState) -> NarrativeState:
     if not draft:
         return state
 
-    await insert_chapter(user_id, project_id, draft, chapter_number)
+    persisted = await insert_chapter(user_id, project_id, draft, chapter_number)
 
-    print(f"lore keeper: chapter {chapter_number} indexed into LightRAG")
+    if persisted:
+        print(f"lore keeper: chapter {chapter_number} indexed into LightRAG")
+    else:
+        print(
+            f"lore keeper: WARNING chapter {chapter_number} NOT persisted "
+            "(insert pipeline failed or still pending)"
+        )
+
     return {}

@@ -17,7 +17,9 @@ def get_llm(model: str, temp: float = 0.7, max_tokens: int = 3000):
 def select_model(task: str):
     return {
         "creative_writing": "llama-3.3-70b-versatile",
-        "analysis": "qwen/qwen3.6-27b",
+        # analysis feeds with_structured_output (tool calling) — qwen/qwen3.6-27b
+        # fails "Failed to call a function" on Groq; llama-3.3-70b-versatile supports it
+        "analysis": "llama-3.3-70b-versatile",
         "extraction": "llama-3.1-8b-instant",
     }.get(task, "llama-3.1-8b-instant")
 

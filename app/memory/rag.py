@@ -1,6 +1,7 @@
 import asyncio
 import os
 from lightrag import LightRAG, QueryParam
+from lightrag.base import DocStatus
 from lightrag.llm.openai import openai_complete_if_cache
 from lightrag.utils import EmbeddingFunc
 from lightrag.kg.shared_storage import initialize_pipeline_status
@@ -32,6 +33,8 @@ async def initialize_rag(user_id: int, project_id: str) -> LightRAG:
         os.environ[key] = value
 
     rag = LightRAG(
+        # added max  async cuz groq rate limit with 4 weorkerrs
+        llm_model_max_async=2,
         working_dir="./lore_db",
         llm_model_func=groq_llm_func,
         chunk_token_size=400,
@@ -77,19 +80,55 @@ async def get_project_rag(user_id: int, project_id: str) -> LightRAG:
 
 async def insert_chapter(
     user_id: int, project_id: str, draft: str, chapter_number: int
-):
+) -> bool:
+    """Index a chapter into the project's lore graph.
+
+    Returns True only when LightRAG confirms the document finished processing
+    (no pending/failed docs left in this workspace). Callers must not assume
+    success — the insert pipeline can fail asynchronously (e.g. embedding API
+    rate limits) without raising.
+    """
     rag = await get_project_rag(user_id, project_id)
     await rag.ainsert(f"Chapter {chapter_number}:\n{draft}")
-    print(
-        f"lore memory: user {user_id}, project {project_id}, chapter {chapter_number} inserted"
+    return await _pipeline_succeeded(rag)
+
+
+async def _pipeline_succeeded(rag: LightRAG) -> bool:
+    """True only if the workspace has no failed or still-pending documents."""
+    try:
+        counts = await rag.doc_status.get_status_counts()
+    except Exception:
+        return False
+    return (
+        counts.get(DocStatus.FAILED.value, 0) == 0
+        and counts.get(DocStatus.PENDING.value, 0) == 0
     )
+
+
+_NO_CONTEXT_MARKERS = ("[no-context]", "not able to provide an answer")
+
+
+def _is_no_context_result(result: str) -> bool:
+    """LightRAG returns an apology string when the graph is empty.
+
+    These results must never be fed to the writer as canon.
+    """
+    if not result or not result.strip():
+        return True
+    lowered = result.lower()
+    return any(marker in lowered for marker in _NO_CONTEXT_MARKERS)
 
 
 async def query_lore(
     user_id: int, project_id: str, query: str, mode: str = "hybrid"
 ) -> str:
     rag = await get_project_rag(user_id, project_id)
-    return await rag.aquery(query, param=QueryParam(mode=mode))
+    result = await rag.aquery(query, param=QueryParam(mode=mode))
+    if result is None:
+        return ""
+    if _is_no_context_result(str(result)):
+        return ""
+    return str(result)
 
 
 def cleanup_project_rag(user_id: int, project_id: str):
