@@ -9,6 +9,9 @@ from app.api.routes import health, generate, review, auth, chapters, projects, g
 from app.api.routes import google_auth
 from fastapi.middleware.cors import CORSMiddleware
 from app.graph_db.neo4j import GraphService
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from app.core.limiter import limiter
 
 graph_service = GraphService()
 
@@ -44,6 +47,9 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 

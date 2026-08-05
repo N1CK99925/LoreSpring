@@ -29,6 +29,9 @@ langchain-core>=0.3.0
 # Groq SDK (direct calls)
 groq>=0.5.0
 
+# Rate limiting
+slowapi>=0.1.10
+
 # Testing/Dev (optional, install with -D)
 # pytest>=8.3.0
 # pytest-asyncio>=0.24.0

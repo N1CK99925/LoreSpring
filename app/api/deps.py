@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 import jwt
@@ -14,7 +14,9 @@ from sqlalchemy import select
 
 
 async def get_current_user(
-    token=Depends(oauth_scheme), db: AsyncSession = Depends(get_database)
+    request: Request,
+    token=Depends(oauth_scheme),
+    db: AsyncSession = Depends(get_database),
 ):
     try:
         payload = jwt.decode(
@@ -36,4 +38,5 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
+    request.state.user = user
     return user

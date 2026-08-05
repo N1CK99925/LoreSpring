@@ -12,6 +12,8 @@ from app.generation.graph import build_graph
 from app.generation.graph_events import stream_pipeline_events
 from app.generation.pipeline import build_config, build_initial_state
 from app.db.repositories.postgres import get_project_summaries
+from app.core.limiter import limiter, user_id_key
+from app.config.rate_limits import RateLimits
 
 router = APIRouter(tags=["Projects"])
 
@@ -59,11 +61,12 @@ async def get_project_api(
 
 
 @router.post("/projects/{project_id}/chapters/{chapter_number}/generate/stream")
+@limiter.limit(RateLimits.LLM.STREAM, key_func=user_id_key)
 async def generate_stream(
     project_id: str,
     chapter_number: int,
     body: GenerationRequest,
-    req: Request,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_database),
 ):
@@ -78,7 +81,7 @@ async def generate_stream(
         raise HTTPException(status_code=403, detail="Project not found or access denied")
 
     previous_memory = await get_project_summaries(db, project_id, user.id)
-    graph = build_graph(req.app.state.checkpointer)
+    graph = build_graph(request.app.state.checkpointer)
     input_state = build_initial_state(body, user.id, previous_memory)
     config = build_config(body)
 

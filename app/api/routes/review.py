@@ -11,6 +11,8 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from sqlalchemy import select
 from app.models.chapter import Project
+from app.core.limiter import limiter, user_id_key
+from app.config.rate_limits import RateLimits
 
 router = APIRouter(tags=["Review"])
 
@@ -23,7 +25,7 @@ class ResumeRequest(BaseModel):
 @router.get("/review/{thread_id}")
 async def get_review(
     thread_id: str,
-    req: Request,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_database),
 ):
@@ -37,7 +39,7 @@ async def get_review(
         raise HTTPException(
             status_code=403, detail="Forbidden: You do not have access to this thread"
         )
-    checkpointer = req.app.state.checkpointer
+    checkpointer = request.app.state.checkpointer
     config = {"configurable": {"thread_id": thread_id}}
 
     state = await checkpointer.aget_tuple(config)
@@ -59,10 +61,11 @@ async def get_review(
 
 
 @router.post("/resume/{thread_id}")
+@limiter.limit(RateLimits.LLM.RESUME, key_func=user_id_key)
 async def resume_pipeline(
     thread_id: str,
     body: ResumeRequest,
-    req: Request,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_database),
 ):
@@ -76,7 +79,7 @@ async def resume_pipeline(
         raise HTTPException(
             status_code=403, detail="Forbidden: You do not have access to this thread"
         )
-    checkpointer = req.app.state.checkpointer
+    checkpointer = request.app.state.checkpointer
     app = build_graph(checkpointer)
     config = {"configurable": {"thread_id": thread_id}}
 

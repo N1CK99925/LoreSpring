@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,13 +8,18 @@ from app.auth.jwt import create_access_token, authenticate_user
 from app.auth.passwords import hash_password
 from app.api.deps import get_current_user
 from app.config.settings import settings
+from app.core.limiter import limiter, user_id_key
+from app.config.rate_limits import RateLimits
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse)
-async def register(user_data: UserRequest, db: AsyncSession = Depends(get_database)):
+@limiter.limit(RateLimits.REGISTER, key_func=user_id_key)
+async def register(
+    request: Request, user_data: UserRequest, db: AsyncSession = Depends(get_database)
+):
     stmt = select(User).where(
         (User.username == user_data.username) | (User.email == user_data.email)
     )
@@ -50,7 +55,10 @@ class LoginRequest(BaseModel):
 
 
 @router.post("/login", response_model=Token)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_database)):
+@limiter.limit(RateLimits.LOGIN, key_func=user_id_key)
+async def login(
+    request: Request, body: LoginRequest, db: AsyncSession = Depends(get_database)
+):
     user = await authenticate_user(db, body.username, body.password)
     if not user:
         raise HTTPException(
