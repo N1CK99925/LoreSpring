@@ -1,1 +1,5 @@
 frontend/src/pages/** linguist-vendored
+frontend/src/components/** linguist-vendored
+frontend/src/utils/** linguist-vendored
+frontend/src/styles/** linguist-vendored
+frontend/src/lib/** linguist-vendored
