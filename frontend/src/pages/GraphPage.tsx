@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// pages/GraphPage.tsx
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ForceGraph2D, { type ForceGraphMethods } from "react-force-graph-2d"
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from "../api/client"
 
 /* ───────────────────────────── Primitives ───────────────────────────── */
 
-const EASE = 'ease-[cubic-bezier(0.32,0.72,0,1)]'
-const GRAPH_BG = '#f4efe4'
-const NODE_RADIUS = 5
+const GRAPH_BG = '#faf9f7'
 
 type GraphNode = {
   id: string
@@ -19,6 +16,7 @@ type GraphNode = {
   attributes?: Record<string, unknown>
   x?: number
   y?: number
+  __degree?: number
 }
 
 type GraphLink = {
@@ -33,14 +31,13 @@ type GraphData = {
   links: GraphLink[]
 }
 
-/* Curated warm-editorial palette, tuned against the cream canvas */
 const ENTITY_COLORS: Record<string, string> = {
-  person: '#047857',
-  location: '#0f766e',
-  organization: '#b45309',
-  concept: '#6d28d9',
-  artifact: '#be123c',
-  unknown: '#a49c8b',
+  person: '#1a7a5c',
+  location: '#2e7d8a',
+  organization: '#b8860b',
+  concept: '#6b52b8',
+  artifact: '#c0392b',
+  unknown: '#8c8278',
 }
 
 const ALL_TYPES = Object.keys(ENTITY_COLORS)
@@ -68,34 +65,15 @@ const Icon = ({ d, className = '', strokeWidth = 1.5 }: { d: string; className?:
   </svg>
 )
 
-const Eyebrow = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 border border-emerald-500/10 bg-emerald-500/[0.03]">
-    <span className="w-1 h-1 rounded-full bg-emerald-500" />
-    <span className="text-[10px] uppercase tracking-[0.22em] font-medium text-emerald-700">{children}</span>
-  </span>
-)
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-[1.25rem] bg-black/[0.03] p-[1px]">
-      <div className="rounded-[calc(1.25rem-1px)] bg-surface-card px-4 py-3 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.02] to-transparent" />
-        <div className="relative">
-          <div className="text-[9px] uppercase tracking-[0.18em] text-text-muted font-medium">{label}</div>
-          <div className="font-serif text-[26px] font-light text-text-primary leading-none mt-1 tabular-nums">{value}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ───────────────────────────── Page ───────────────────────────── */
+/* ───────────────────────── Page ───────────────────────── */
 
 export default function GraphPage() {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
   const graphRef = useRef<ForceGraphMethods | undefined>(undefined)
+  const containerRef = useRef<HTMLDivElement>(null)
   const hasFitRef = useRef(false)
+  const zoomRef = useRef(1)
 
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] })
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -142,13 +120,9 @@ export default function GraphPage() {
     return counts
   }, [graphData])
 
-  const legendData = useMemo(() =>
-    ALL_TYPES.map((type) => ({ type, color: ENTITY_COLORS[type], count: typeCounts[type] || 0 })),
-    [typeCounts])
-
-  const toggleType = (type: string) => {
+  const toggleType = useCallback((type: string) => {
     setVisibleTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type])
-  }
+  }, [])
 
   const filteredData = useMemo<GraphData>(() => {
     const q = query.trim().toLowerCase()
@@ -160,19 +134,36 @@ export default function GraphPage() {
     return { nodes, links }
   }, [graphData, visibleTypes, query])
 
-  const processedData = useMemo<GraphData>(() => ({
-    nodes: filteredData.nodes.map((node) => ({ ...node, color: ENTITY_COLORS[node.type || 'unknown'] || ENTITY_COLORS.unknown })),
-    links: filteredData.links,
-  }), [filteredData])
+  /* Compute degree for each node */
+  const processedData = useMemo<GraphData>(() => {
+    const degreeMap = new Map<string, number>()
+    filteredData.links.forEach((l) => {
+      const s = idOf(l.source), t = idOf(l.target)
+      degreeMap.set(s, (degreeMap.get(s) || 0) + 1)
+      degreeMap.set(t, (degreeMap.get(t) || 0) + 1)
+    })
+    return {
+      nodes: filteredData.nodes.map((node) => ({
+        ...node,
+        color: ENTITY_COLORS[node.type || 'unknown'] || ENTITY_COLORS.unknown,
+        __degree: degreeMap.get(node.id) || 0,
+      })),
+      links: filteredData.links,
+    }
+  }, [filteredData])
+
+  const maxDegree = useMemo(() =>
+    Math.max(1, ...processedData.nodes.map((n) => n.__degree || 0)),
+    [processedData])
 
   const displayError = missingProject ? "Project ID not found. Please navigate from the dashboard." : error
 
-  /* The selection is derived from the id so a filtered-out node clears itself */
   const selectedNode = useMemo(() =>
     processedData.nodes.find((n) => n.id === selectedId) ?? null,
     [processedData, selectedId])
 
-  /* Highlight graph: the hovered / selected node plus its immediate neighbours */
+  /* ── Highlight sets ── */
+
   const { highlightIds, highlightLinks } = useMemo(() => {
     const ids = new Set<string>()
     const linkKeys = new Set<string>()
@@ -207,42 +198,45 @@ export default function GraphPage() {
 
   /* ── Interactions ── */
 
-  const handleNodeClick = (node: any) => {
+  const handleNodeClick = useCallback((node: any) => {
     setSelectedId(node.id)
     graphRef.current?.centerAt(node.x, node.y, 600)
-  }
+  }, [])
 
-  const handleNodeHover = (node: any) => {
+  const handleNodeHover = useCallback((node: any) => {
     const id = node ? (node as GraphNode).id : null
     setHoveredId(id)
     document.body.style.cursor = id ? 'pointer' : ''
-  }
+  }, [])
 
   useEffect(() => () => { document.body.style.cursor = '' }, [])
 
-  const handleBackgroundClick = () => setSelectedId(null)
+  const handleBackgroundClick = useCallback(() => setSelectedId(null), [])
 
-  const handleEngineStop = () => {
+  const handleEngineStop = useCallback(() => {
     if (!hasFitRef.current && processedData.nodes.length > 0) {
       hasFitRef.current = true
-      graphRef.current?.zoomToFit(500, 80)
+      graphRef.current?.zoomToFit(400, 100)
     }
-  }
+  }, [processedData])
 
-  const zoomBy = (factor: number) => {
+  const zoomBy = useCallback((factor: number) => {
     const g = graphRef.current
     if (!g) return
     g.zoom(g.zoom() * factor, 350)
-  }
+  }, [])
 
-  const fitGraph = () => graphRef.current?.zoomToFit(500, 80)
+  const fitGraph = useCallback(() => graphRef.current?.zoomToFit(400, 100), [])
 
-  const reheat = () => graphRef.current?.d3ReheatSimulation()
+  const reheat = useCallback(() => {
+    hasFitRef.current = false
+    graphRef.current?.d3ReheatSimulation()
+  }, [])
 
-  const focusNode = (n: GraphNode) => {
+  const focusNode = useCallback((n: GraphNode) => {
     setSelectedId(n.id)
     graphRef.current?.centerAt(n.x, n.y, 600)
-  }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedId(null) }
@@ -250,66 +244,187 @@ export default function GraphPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  /* ── Node sizing ── */
+
+  const nodeRadius = useCallback((node: GraphNode) => {
+    const degree = node.__degree || 0
+    const normalized = degree / maxDegree
+    return 5 + normalized * 10
+  }, [maxDegree])
+
+  /* Configure d3 forces via ref */
+  useEffect(() => {
+    const g = graphRef.current
+    if (!g) return
+    const d3 = g.d3Force
+    if (!d3) return
+    const charge = d3('charge')
+    if (charge && 'strength' in charge) (charge as any).strength(-600)
+    const linkForce = d3('link')
+    if (linkForce && 'distance' in linkForce) (linkForce as any).distance(160)
+    const center = d3('center')
+    if (center && 'strength' in center) (center as any).strength(0.01)
+    const collision = d3('collision')
+    if (collision && 'radius' in collision) {
+      (collision as any).radius((node: any) => nodeRadius(node) + 16)
+    }
+  }, [nodeRadius])
+
   /* ── Canvas painters ── */
 
-  const paintNodeArea = (node: any, color: string, ctx: CanvasRenderingContext2D) => {
+  const paintNodeArea = useCallback((node: any, color: string, ctx: CanvasRenderingContext2D) => {
     const n = node as GraphNode
+    const r = nodeRadius(n)
     ctx.fillStyle = color
     ctx.beginPath()
-    ctx.arc(n.x || 0, n.y || 0, NODE_RADIUS * 2.6, 0, 2 * Math.PI)
+    ctx.arc(n.x || 0, n.y || 0, r + 10, 0, 2 * Math.PI)
     ctx.fill()
-  }
+  }, [nodeRadius])
 
-  const drawNode = (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const drawNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const n = node as GraphNode
     const x = n.x || 0, y = n.y || 0
-    const isHl = highlightIds.has(n.id)
-    const isDim = highlightIds.size > 0 && !isHl
     const color = n.color || ENTITY_COLORS.unknown
-    const r = NODE_RADIUS * (isHl ? 1.5 : 1)
+    const r = nodeRadius(n)
+    const zoom = zoomRef.current
+
+    /* ── Depth hierarchy ── */
+    let alpha = 0.88
+    if (highlightIds.size > 0) {
+      if (highlightIds.has(n.id)) {
+        alpha = 1
+      } else {
+        alpha = 0.18
+      }
+    }
 
     ctx.save()
-    ctx.globalAlpha = isDim ? 0.28 : 1
+    ctx.globalAlpha = alpha
 
-    /* soft radial halo */
-    const halo = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2.8)
-    halo.addColorStop(0, withAlpha(color, isHl ? 0.32 : 0.16))
-    halo.addColorStop(1, withAlpha(color, 0))
-    ctx.beginPath()
-    ctx.arc(x, y, r * 2.8, 0, 2 * Math.PI)
-    ctx.fillStyle = halo
-    ctx.fill()
+    /* ── Subtle ambient glow (only on highlighted nodes) ── */
+    if (alpha > 0.5) {
+      const glowR = r * 2.5
+      const glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowR)
+      glow.addColorStop(0, withAlpha(color, 0.18))
+      glow.addColorStop(1, withAlpha(color, 0))
+      ctx.beginPath()
+      ctx.arc(x, y, glowR, 0, 2 * Math.PI)
+      ctx.fillStyle = glow
+      ctx.fill()
+    }
 
-    /* core */
+    /* ── Core node ── */
     ctx.beginPath()
     ctx.arc(x, y, r, 0, 2 * Math.PI)
     ctx.fillStyle = color
-    ctx.shadowBlur = isHl ? 18 : 10
-    ctx.shadowColor = color
+
+    if (alpha > 0.5) {
+      ctx.shadowBlur = 12
+      ctx.shadowColor = withAlpha(color, 0.35)
+    }
+
     ctx.fill()
     ctx.shadowBlur = 0
 
-    /* glass rim */
+    /* ── Subtle inner highlight ── */
+    if (r > 3) {
+      const highlight = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, 0, x, y, r)
+      highlight.addColorStop(0, withAlpha('#ffffff', 0.25))
+      highlight.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, 2 * Math.PI)
+      ctx.fillStyle = highlight
+      ctx.fill()
+    }
+
+    /* ── Label rendering ── */
+    const isHl = highlightIds.has(n.id)
+    const isHovered = hoveredId === n.id
+    const degree = n.__degree || 0
+    const importance = degree / maxDegree
+
+    let showLabel = false
+    if (isHl || isHovered) {
+      showLabel = true
+    } else if (zoom > 2) {
+      showLabel = importance > 0.15
+    } else if (zoom > 1.4) {
+      showLabel = importance > 0.3
+    } else if (zoom > 1) {
+      showLabel = importance > 0.5
+    } else {
+      showLabel = importance > 0.7
+    }
+
+    if (showLabel) {
+      const fontSize = (isHl || isHovered ? 12 : 10.5) / globalScale
+      const fontWeight = (isHl || isHovered) ? 600 : 500
+      ctx.font = `${fontWeight} ${fontSize}px "Inter", "SF Pro Text", -apple-system, sans-serif`
+      ctx.textBaseline = 'middle'
+      const labelX = x + r + 5 / globalScale
+      const labelY = y
+
+      const textMetrics = ctx.measureText(n.label)
+      const textW = textMetrics.width
+      const textH = fontSize
+
+      /* background pill */
+      const padX = 4 / globalScale
+      const padY = 2 / globalScale
+      const pillH = textH + padY * 2
+      const pillW = textW + padX * 2
+
+      ctx.fillStyle = withAlpha(GRAPH_BG, 0.88)
+      ctx.beginPath()
+      ctx.roundRect(labelX - padX, labelY - pillH / 2, pillW, pillH, 3 / globalScale)
+      ctx.fill()
+
+      /* text */
+      ctx.fillStyle = isHl ? color : (importance > 0.5 ? '#2c2520' : '#6b5f52')
+      ctx.fillText(n.label, labelX, labelY + 0.5 / globalScale)
+    }
+
+    ctx.restore()
+  }, [highlightIds, hoveredId, nodeRadius, maxDegree])
+
+  /* ── Custom link rendering ── */
+
+  const linkWidth = useCallback((l: any) => {
+    if (highlightLinks.has(linkKey(l))) return 2
+    return 1
+  }, [highlightLinks])
+
+  const linkColor = useCallback((l: any) => {
+    if (highlightLinks.has(linkKey(l))) return withAlpha('#3b7d6e', 0.55)
+    return withAlpha('#9a9186', 0.18)
+  }, [highlightLinks])
+
+  const linkCanvasObject = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const isHl = highlightLinks.has(linkKey(link))
+    const sx = (link.source as any).x || 0
+    const sy = (link.source as any).y || 0
+    const tx = (link.target as any).x || 0
+    const ty = (link.target as any).y || 0
+
+    const lineWidth = (isHl ? 2 : 1) / globalScale
+    const alpha = isHl ? 0.6 : 0.2
+
+    ctx.save()
+    ctx.globalAlpha = alpha
+    ctx.strokeStyle = isHl ? '#3b7d6e' : '#9a9186'
+    ctx.lineWidth = lineWidth
+    ctx.lineCap = 'round'
+
     ctx.beginPath()
-    ctx.arc(x, y, r - 0.5 / globalScale, 0, 2 * Math.PI)
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)'
-    ctx.lineWidth = 1 / globalScale
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(tx, ty)
     ctx.stroke()
 
-    /* label */
-    if (globalScale > 1.25 || isHl) {
-      const fs = 12 / globalScale
-      ctx.font = `500 ${fs}px Outfit, sans-serif`
-      ctx.textBaseline = 'middle'
-      const tx = x + r + 8 / globalScale
-      ctx.strokeStyle = 'rgba(244,239,228,0.85)'
-      ctx.lineWidth = 3 / globalScale
-      ctx.strokeText(n.label, tx, y)
-      ctx.fillStyle = isHl ? '#047857' : '#221d14'
-      ctx.fillText(n.label, tx, y)
-    }
     ctx.restore()
-  }
+  }, [highlightLinks])
+
+  const linkDirectionalParticles = useCallback((l: any) =>
+    highlightLinks.has(linkKey(l)) ? 3 : 0, [highlightLinks])
 
   const selectedColor = selectedNode
     ? ENTITY_COLORS[selectedNode.type || 'unknown'] || ENTITY_COLORS.unknown
@@ -322,189 +437,205 @@ export default function GraphPage() {
   /* ── Render ── */
 
   return (
-    <div className="h-[100dvh] bg-surface flex overflow-hidden">
-      <div className="grain-overlay" />
+    <div className="h-[100dvh] bg-[#faf9f7] flex overflow-hidden font-sans">
+      {sidebarOpen && <div className="fixed inset-0 bg-black/10 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {sidebarOpen && <div className="sidebar-backdrop md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {/* ── Sidebar ── */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-[320px] transform transition-transform duration-300 ease-out md:relative md:translate-x-0 md:z-auto md:shrink-0 md:m-3 md:h-[calc(100dvh-1.5rem)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ opacity: ready ? 1 : 0, transition: 'opacity 0.5s ease, transform 0.3s ease' }}
+      >
+        <div className="h-full rounded-2xl bg-white/80 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col">
 
-      {/* ── Sidebar: floating panel on desktop, drawer on mobile ── */}
-      <div className={`sidebar-overlay md:!static md:!transform-none md:shrink-0 md:m-4 md:h-[calc(100dvh-2rem)] md:w-[340px] md:max-w-none z-30 ${sidebarOpen ? 'open' : ''}`}
-        style={{ opacity: ready ? 1 : 0, transition: `opacity 0.7s ease-[cubic-bezier(0.16,1,0.3,1)] 0.05s, transform 0.35s cubic-bezier(0.16,1,0.3,1)` }}>
-        <div className="h-full md:rounded-[2rem] bg-black/[0.03] p-[1.5px] md:ring-1 md:ring-black/5 md:shadow-[0_32px_90px_-48px_rgba(26,24,20,0.45)]">
-          <div className="h-full md:rounded-[calc(2rem-1.5px)] bg-surface-card overflow-hidden flex flex-col">
-
-            {/* Brand */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-4">
-              <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('/dashboard')}>
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/[0.06] flex items-center justify-center border border-emerald-500/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-emerald-500/[0.1] group-hover:scale-105">
-                  <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-4 h-4 object-contain" />
-                </div>
-                <div>
-                  <div className="font-serif text-[17px] font-normal text-text-primary tracking-tight leading-none group-hover:text-emerald-800 transition-colors duration-500">LoreSpring</div>
-                  <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted mt-1">Story graph</div>
-                </div>
+          {/* Brand */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-3">
+            <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('/dashboard')}>
+              <div className="w-8 h-8 rounded-lg bg-[#3b7d6e]/[0.08] flex items-center justify-center transition-all duration-300 group-hover:bg-[#3b7d6e]/[0.12]">
+                <img src="/lorespring-assets/lorespring-logo.png" alt="LoreSpring" className="w-4 h-4 object-contain" />
               </div>
+              <div>
+                <div className="text-[15px] font-semibold text-[#1a1714] tracking-tight leading-none group-hover:text-[#3b7d6e] transition-colors duration-300">LoreSpring</div>
+                <div className="text-[9px] uppercase tracking-[0.18em] text-[#9a9186] mt-0.5 font-medium">Story graph</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+              className="md:hidden w-7 h-7 rounded-md border border-black/[0.08] flex items-center justify-center text-[#9a9186] cursor-pointer hover:bg-black/[0.03] transition-colors"
+            >
+              <Icon d="M18 6 6 18M6 6l12 12" />
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="px-5 mt-2 grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-[#f5f3ef] px-3 py-2.5">
+              <div className="text-[9px] uppercase tracking-[0.16em] text-[#9a9186] font-medium">Entities</div>
+              <div className="text-[22px] font-light text-[#1a1714] leading-none mt-0.5 tabular-nums font-serif">{filteredData.nodes.length}</div>
+            </div>
+            <div className="rounded-xl bg-[#f5f3ef] px-3 py-2.5">
+              <div className="text-[9px] uppercase tracking-[0.16em] text-[#9a9186] font-medium">Links</div>
+              <div className="text-[22px] font-light text-[#1a1714] leading-none mt-0.5 tabular-nums font-serif">{filteredData.links.length}</div>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="px-5 mt-4">
+            <label className="text-[9px] uppercase tracking-[0.16em] text-[#9a9186] font-medium">Search entities</label>
+            <div className="mt-1.5 rounded-lg bg-[#f5f3ef] p-0.5 focus-within:ring-1 focus-within:ring-[#3b7d6e]/30 transition-all flex items-center">
+              <span className="pl-2.5 text-[#9a9186] shrink-0">
+                <Icon d="M11 11a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7 7-4-4" />
+              </span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search labels..."
+                className="w-full bg-transparent px-2 py-1.5 text-[12px] text-[#1a1714] outline-none placeholder:text-[#b5ad9e]"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="mr-1 w-5 h-5 rounded flex items-center justify-center text-[#9a9186] cursor-pointer hover:text-[#1a1714] hover:bg-black/[0.04] transition-colors shrink-0"
+                >
+                  <Icon d="M18 6 6 18M6 6l12 12" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 mt-4 pb-2">
+            <div className="flex items-center justify-between px-2 mb-1.5">
+              <span className="text-[9px] uppercase tracking-[0.16em] text-[#9a9186] font-medium">Types</span>
               <button
-                onClick={() => setSidebarOpen(false)}
-                aria-label="Close sidebar"
-                className="md:hidden w-8 h-8 rounded-full border border-border-subtle flex items-center justify-center text-text-muted cursor-pointer hover:bg-surface-muted transition-all duration-500 active:scale-90"
+                onClick={() => setVisibleTypes(visibleTypes.length === ALL_TYPES.length ? [] : ALL_TYPES)}
+                className="text-[9px] uppercase tracking-[0.14em] text-[#3b7d6e] cursor-pointer hover:text-[#2d6357] transition-colors font-medium"
               >
-                <Icon d="M18 6 6 18M6 6l12 12" />
+                {visibleTypes.length === ALL_TYPES.length ? 'Hide all' : 'Show all'}
               </button>
             </div>
-
-            {/* Eyebrow */}
-            <div className="px-5">
-              <Eyebrow>Narrative memory</Eyebrow>
-            </div>
-
-            {/* Stats */}
-            <div className="px-5 mt-5 grid grid-cols-2 gap-2.5">
-              <StatCard label="Entities" value={filteredData.nodes.length} />
-              <StatCard label="Links" value={filteredData.links.length} />
-            </div>
-
-            {/* Search */}
-            <div className="px-5 mt-5">
-              <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">Filter entities</label>
-              <div className="mt-2 rounded-full bg-black/[0.03] p-1 ring-1 ring-black/5 focus-within:ring-emerald-500/30 transition-all duration-500 flex items-center">
-                <span className="pl-3 text-text-muted shrink-0">
-                  <Icon d="M11 11a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7 7-4-4" />
-                </span>
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search labels…"
-                  className="w-full bg-transparent px-2.5 py-2 text-xs text-text-primary outline-none placeholder:text-text-muted/70"
-                />
-                {query && (
+            <div className="flex flex-col gap-px">
+              {ALL_TYPES.map((type) => {
+                const color = ENTITY_COLORS[type]
+                const count = typeCounts[type] || 0
+                const active = visibleTypes.includes(type)
+                return (
                   <button
-                    onClick={() => setQuery('')}
-                    aria-label="Clear search"
-                    className="mr-1 w-6 h-6 rounded-full flex items-center justify-center text-text-muted cursor-pointer hover:text-text-primary hover:bg-surface-muted transition-all duration-500 shrink-0"
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={`group w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all duration-200 ${
+                      active ? 'bg-[#f5f3ef]' : 'hover:bg-[#f5f3ef]/60'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 transition-all duration-200 ${active ? '' : 'opacity-30'}`}
+                      style={{ background: color }}
+                    />
+                    <span className={`text-[12px] capitalize transition-colors duration-200 ${active ? 'text-[#1a1714]' : 'text-[#b5ad9e]'}`}>{type}</span>
+                    <span className="flex-1" />
+                    <span className={`text-[10px] tabular-nums ${active ? 'text-[#9a9186]' : 'text-[#d4cdc2]'}`}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Selection */}
+          <div className="px-4 pb-4">
+            {selectedNode ? (
+              <div className="rounded-xl bg-[#f5f3ef] p-3 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5" style={{ background: selectedColor }} />
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-medium text-[#1a1714] truncate leading-tight">{selectedNode.label}</div>
+                      <div className="text-[10px] text-[#9a9186] mt-0.5 capitalize">{selectedNode.type || 'unknown'}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedId(null)}
+                    aria-label="Clear selection"
+                    className="w-5 h-5 rounded flex items-center justify-center text-[#9a9186] cursor-pointer hover:text-[#1a1714] hover:bg-black/[0.04] transition-colors shrink-0"
                   >
                     <Icon d="M18 6 6 18M6 6l12 12" />
                   </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-[#9a9186] tabular-nums">{neighborIds.size} connections</span>
+                  <button
+                    onClick={() => focusNode(selectedNode)}
+                    className="text-[11px] text-[#3b7d6e] cursor-pointer hover:text-[#2d6357] transition-colors font-medium"
+                  >
+                    Re-center
+                  </button>
+                </div>
+                {description && (
+                  <p className="text-[11px] text-[#6b5f52] leading-relaxed">{description}</p>
+                )}
+                {neighbors.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {neighbors.slice(0, 6).map((n) => (
+                      <button
+                        key={n.id}
+                        onClick={() => focusNode(n)}
+                        className="flex items-center gap-1 rounded-md border border-black/[0.06] bg-white px-2 py-1 text-[10px] text-[#6b5f52] cursor-pointer transition-all hover:border-[#3b7d6e]/30 hover:text-[#3b7d6e] active:scale-95"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: n.color || ENTITY_COLORS.unknown }} />
+                        <span className="max-w-[100px] truncate">{n.label}</span>
+                      </button>
+                    ))}
+                    {neighborIds.size > neighbors.length && (
+                      <span className="flex items-center px-1 text-[10px] text-[#9a9186]">+{neighborIds.size - neighbors.length}</span>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <p className="text-[11px] text-[#b5ad9e] leading-relaxed px-1">
+                Click an entity to inspect its connections.
+              </p>
+            )}
+          </div>
 
-            {/* Legend */}
-            <div className="flex-1 min-h-0 overflow-y-auto ls-scroll px-3 mt-5 pb-3">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <span className="text-[10px] uppercase tracking-[0.22em] text-text-muted font-medium">Legend</span>
-                <button
-                  onClick={() => setVisibleTypes(visibleTypes.length === ALL_TYPES.length ? [] : ALL_TYPES)}
-                  className="text-[9px] uppercase tracking-[0.16em] text-emerald-700 cursor-pointer hover:text-emerald-800 transition-colors duration-500"
-                >
-                  {visibleTypes.length === ALL_TYPES.length ? 'Hide all' : 'Show all'}
-                </button>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {legendData.map(({ type, color, count }) => {
-                  const active = visibleTypes.includes(type)
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => toggleType(type)}
-                      className={`group w-full flex items-center gap-2.5 rounded-2xl px-3 py-2 cursor-pointer transition-all duration-500 ${EASE} ${active ? 'bg-surface-muted' : 'hover:bg-surface-muted/60'}`}
-                    >
-                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-500 ${active ? '' : 'ring-1 ring-black/10'}`}
-                        style={{ background: active ? color : 'transparent' }} />
-                      <span className={`text-xs capitalize transition-colors duration-500 ${active ? 'text-text-primary' : 'text-text-muted'}`}>{type}</span>
-                      <span className="flex-1" />
-                      <span className={`text-[10px] tabular-nums ${active ? 'text-text-muted' : 'text-text-muted/50'}`}>{count}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Selection readout */}
-            <div className="px-5 pb-5">
-              {selectedNode ? (
-                <div className="rounded-[1.5rem] bg-black/[0.03] p-[1px]">
-                  <div className="rounded-[calc(1.5rem-1px)] bg-surface-card p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)]">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5" style={{ background: selectedColor }} />
-                        <span className="font-serif text-[15px] text-text-primary truncate">{selectedNode.label}</span>
-                      </div>
-                      <button
-                        onClick={() => setSelectedId(null)}
-                        aria-label="Clear selection"
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-text-muted cursor-pointer hover:text-text-primary hover:bg-surface-muted transition-all duration-500 shrink-0"
-                      >
-                        <Icon d="M18 6 6 18M6 6l12 12" />
-                      </button>
-                    </div>
-                    <div className="mt-2.5 flex items-center justify-between gap-2">
-                      <span className="rounded-full px-2.5 py-0.5 text-[9px] uppercase tracking-[0.16em] font-medium"
-                        style={{ background: withAlpha(selectedColor, 0.12), color: selectedColor }}>
-                        {selectedNode.type || 'unknown'}
-                      </span>
-                      <button
-                        onClick={() => focusNode(selectedNode)}
-                        className="group/f text-[11px] text-text-muted cursor-pointer hover:text-emerald-800 transition-colors duration-500 flex items-center gap-1.5"
-                      >
-                        Re-center
-                        <Icon d="M7 17 17 7M8 7h9v9" className="transition-transform duration-500 group-hover/f:translate-x-0.5 group-hover/f:-translate-y-0.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[11px] text-text-muted leading-relaxed px-1">
-                  Click an entity on the canvas to inspect its connections.
-                </p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-border-subtle/60 p-3 flex flex-col gap-1">
-              <button
-                onClick={reheat}
-                className="group/g w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] text-text-secondary cursor-pointer transition-all duration-500 hover:bg-surface-muted hover:pl-4 hover:text-text-primary"
-              >
-                <Icon d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" className="transition-transform duration-700 group-hover/g:rotate-180" />
-                Re-layout graph
-              </button>
-              <button
-                onClick={() => navigate(-1)}
-                className="group/b w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] text-text-muted cursor-pointer transition-all duration-500 hover:bg-red-500/[0.04] hover:text-red-600 hover:pl-4"
-              >
-                <Icon d="M19 12H5M12 19l-7-7 7-7" />
-                Back to project
-              </button>
-            </div>
+          {/* Footer */}
+          <div className="border-t border-black/[0.04] p-2.5 flex flex-col gap-0.5">
+            <button
+              onClick={reheat}
+              className="group/g w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] text-[#6b5f52] cursor-pointer transition-all duration-200 hover:bg-[#f5f3ef] hover:text-[#1a1714]"
+            >
+              <Icon d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" className="transition-transform duration-700 group-hover/g:rotate-180" />
+              Re-layout
+            </button>
+            <button
+              onClick={() => navigate(-1)}
+              className="group/b w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] text-[#b5ad9e] cursor-pointer transition-all duration-200 hover:bg-red-500/[0.04] hover:text-red-500"
+            >
+              <Icon d="M19 12H5M12 19l-7-7 7-7" />
+              Back
+            </button>
           </div>
         </div>
       </div>
 
       {/* ── Graph canvas ── */}
-      <div className="flex-1 relative z-0 min-w-0">
-        {/* ambient editorial glow */}
-        <div className="pointer-events-none absolute inset-0 z-[1]" aria-hidden>
-          <div className="absolute -top-32 -right-24 w-[480px] h-[480px] rounded-full bg-emerald-500/[0.05] blur-3xl" />
-          <div className="absolute -bottom-40 -left-24 w-[560px] h-[560px] rounded-full bg-gold-500/[0.04] blur-3xl" />
-        </div>
-
-        <div className={`absolute inset-0 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${ready ? 'opacity-100' : 'opacity-0'}`}>
+      <div ref={containerRef} className="flex-1 relative z-0 min-w-0">
+        <div className={`absolute inset-0 transition-opacity duration-500 ease-out ${ready ? 'opacity-100' : 'opacity-0'}`}>
           <ForceGraph2D
             ref={graphRef}
             graphData={processedData}
             backgroundColor={GRAPH_BG}
-            nodeRelSize={NODE_RADIUS}
-            cooldownTicks={120}
-            cooldownTime={1800}
-            d3AlphaDecay={0.03}
-            d3VelocityDecay={0.32}
-            linkWidth={(l: any) => highlightLinks.has(linkKey(l)) ? 2 : 1}
-            linkColor={(l: any) => highlightLinks.has(linkKey(l)) ? withAlpha('#047857', 0.6) : withAlpha('#0d9488', 0.16)}
-            linkDirectionalParticles={(l: any) => highlightLinks.has(linkKey(l)) ? 2 : 0}
-            linkDirectionalParticleSpeed={0.006}
-            linkDirectionalParticleWidth={2}
-            linkDirectionalParticleColor={() => '#047857'}
+            nodeRelSize={1}
+            cooldownTicks={300}
+            cooldownTime={3500}
+            d3AlphaDecay={0.015}
+            d3VelocityDecay={0.3}
+            linkWidth={linkWidth}
+            linkColor={linkColor}
+            linkDirectionalParticles={linkDirectionalParticles}
+            linkDirectionalParticleSpeed={0.002}
+            linkDirectionalParticleWidth={1.2}
+            linkDirectionalParticleColor={() => '#1a7a5c'}
             onNodeClick={handleNodeClick}
             onNodeHover={handleNodeHover}
             onBackgroundClick={handleBackgroundClick}
@@ -512,22 +643,23 @@ export default function GraphPage() {
             nodeCanvasObjectMode={() => 'replace'}
             nodeCanvasObject={drawNode}
             nodePointerAreaPaint={paintNodeArea}
+            linkCanvasObjectMode={() => 'replace'}
+            linkCanvasObject={linkCanvasObject}
+            onZoom={({ k }: any) => { zoomRef.current = k }}
           />
         </div>
 
         {/* Loading */}
         {loading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface">
-            <div className="hero-enter rounded-[2rem] bg-black/[0.03] p-[1.5px]">
-              <div className="rounded-[calc(2rem-1.5px)] bg-surface-card px-9 py-10 flex flex-col items-center gap-5 text-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-                <div className="relative w-10 h-10">
-                  <div className="absolute inset-0 rounded-full border border-emerald-500/15" />
-                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-emerald-600 animate-spin" />
-                </div>
-                <div>
-                  <div className="font-serif text-xl text-text-primary font-light">Mapping the narrative</div>
-                  <div className="text-text-muted text-xs mt-1">Assembling entities &amp; connections…</div>
-                </div>
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#faf9f7]">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-8 h-8">
+                <div className="absolute inset-0 rounded-full border border-black/[0.06]" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#3b7d6e] animate-spin" />
+              </div>
+              <div className="text-center">
+                <div className="text-[15px] text-[#1a1714] font-medium">Mapping the narrative</div>
+                <div className="text-[12px] text-[#9a9186] mt-0.5">Assembling entities & connections</div>
               </div>
             </div>
           </div>
@@ -535,95 +667,83 @@ export default function GraphPage() {
 
         {/* Error */}
         {displayError && !loading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface px-4">
-            <div className="hero-enter max-w-sm text-center">
-              <div className="flex justify-center mb-5">
-                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 border border-red-500/15 bg-red-500/[0.04]">
-                  <span className="w-1 h-1 rounded-full bg-red-500" />
-                  <span className="text-[10px] uppercase tracking-[0.22em] font-medium text-red-600">Connection lost</span>
-                </span>
-              </div>
-              <h3 className="font-serif text-2xl font-light text-text-primary mb-2">Couldn't load the graph</h3>
-              <p className="text-text-muted text-sm leading-relaxed mb-7">{error}</p>
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#faf9f7] px-4">
+            <div className="max-w-sm text-center">
+              <div className="text-[16px] text-[#1a1714] font-medium mb-2">Couldn't load the graph</div>
+              <p className="text-[13px] text-[#9a9186] leading-relaxed mb-6">{error}</p>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="group/btn inline-flex items-center gap-2.5 rounded-full bg-emerald-700 text-white pl-5 pr-2.5 py-2.5 text-sm font-medium cursor-pointer transition-all duration-500 hover:shadow-[0_10px_32px_rgba(13,140,74,0.25)] active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#3b7d6e] text-white px-5 py-2.5 text-[13px] font-medium cursor-pointer transition-all duration-200 hover:bg-[#2d6357] active:scale-[0.98]"
               >
                 Back to Dashboard
-                <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center transition-all duration-500 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 group-hover/btn:scale-105">
-                  <Icon d="M5 12h14M12 5l7 7-7 7" strokeWidth={2} className="text-white/90" />
-                </span>
               </button>
             </div>
           </div>
         )}
 
-        {/* ── Entity-type filter island ── */}
+        {/* ── Type filter bar ── */}
         {!loading && !displayError && (
-          <div className="absolute top-16 inset-x-3 md:inset-x-auto md:top-6 md:left-6 z-10">
-            <div className="inline-block max-w-full rounded-full bg-black/[0.03] p-1 ring-1 ring-black/5 backdrop-blur-xl">
-              <div className="rounded-full bg-surface-card/85 flex items-center gap-1 px-1.5 py-1 overflow-x-auto ls-scroll">
-                {legendData.map(({ type, color }) => {
-                  const active = visibleTypes.includes(type)
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => toggleType(type)}
-                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] font-medium whitespace-nowrap cursor-pointer transition-all duration-500 ${EASE} ${
-                        active
-                          ? 'bg-emerald-500/[0.06] text-emerald-800 ring-1 ring-emerald-500/15'
-                          : 'text-text-muted hover:text-text-secondary'
-                      }`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active ? color : 'rgba(0,0,0,0.12)' }} />
-                      {type}
-                    </button>
-                  )
-                })}
-                <div className="w-px h-5 bg-border-subtle mx-1 shrink-0" />
-                <button
-                  onClick={() => setVisibleTypes(visibleTypes.length === ALL_TYPES.length ? [] : ALL_TYPES)}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] font-medium whitespace-nowrap cursor-pointer text-text-muted hover:text-emerald-800 transition-all duration-500"
-                >
-                  {visibleTypes.length === ALL_TYPES.length ? 'All' : `${visibleTypes.length}/${ALL_TYPES.length}`}
-                </button>
-              </div>
+          <div className="absolute top-4 left-4 z-10">
+            <div className="inline-flex items-center gap-1 bg-white/80 backdrop-blur-xl border border-black/[0.06] rounded-xl px-2 py-1.5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]">
+              {ALL_TYPES.map((type) => {
+                const color = ENTITY_COLORS[type]
+                const active = visibleTypes.includes(type)
+                return (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] font-medium whitespace-nowrap cursor-pointer transition-all duration-200 ${
+                      active
+                        ? 'bg-[#f5f3ef] text-[#1a1714]'
+                        : 'text-[#b5ad9e] hover:text-[#9a9186]'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active ? color : '#d4cdc2' }} />
+                    <span className="hidden sm:inline">{type}</span>
+                  </button>
+                )
+              })}
+              <div className="w-px h-4 bg-black/[0.06] mx-0.5" />
+              <button
+                onClick={() => setVisibleTypes(visibleTypes.length === ALL_TYPES.length ? [] : ALL_TYPES)}
+                className="rounded-lg px-2 py-1 text-[10px] uppercase tracking-[0.08em] font-medium whitespace-nowrap cursor-pointer text-[#9a9186] hover:text-[#1a1714] transition-colors"
+              >
+                {visibleTypes.length === ALL_TYPES.length ? 'All' : `${visibleTypes.length}/${ALL_TYPES.length}`}
+              </button>
             </div>
           </div>
         )}
 
-        {/* ── Zoom cluster ── */}
+        {/* ── Zoom controls ── */}
         {!loading && !displayError && (
-          <div className="absolute top-3 right-3 md:top-6 md:right-6 z-10">
-            <div className="rounded-full bg-black/[0.03] p-1 ring-1 ring-black/5 backdrop-blur-xl">
-              <div className="rounded-full bg-surface-card/85 flex items-center gap-0.5 px-1 py-1">
-                <button onClick={() => zoomBy(1.3)} aria-label="Zoom in"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted cursor-pointer transition-all duration-500 hover:text-emerald-800 hover:bg-emerald-500/[0.06] active:scale-90">
-                  <Icon d="M12 5v14M5 12h14" strokeWidth={1.75} />
-                </button>
-                <button onClick={() => zoomBy(1 / 1.3)} aria-label="Zoom out"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted cursor-pointer transition-all duration-500 hover:text-emerald-800 hover:bg-emerald-500/[0.06] active:scale-90">
-                  <Icon d="M5 12h14" strokeWidth={1.75} />
-                </button>
-                <div className="w-px h-5 bg-border-subtle mx-0.5" />
-                <button onClick={fitGraph} aria-label="Fit graph"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted cursor-pointer transition-all duration-500 hover:text-emerald-800 hover:bg-emerald-500/[0.06] active:scale-90">
-                  <Icon d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" strokeWidth={1.75} />
-                </button>
-                <button onClick={reheat} aria-label="Re-layout"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted cursor-pointer transition-all duration-500 hover:text-emerald-800 hover:bg-emerald-500/[0.06] active:scale-90">
-                  <Icon d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" strokeWidth={1.75} />
-                </button>
-              </div>
+          <div className="absolute top-4 right-4 z-10">
+            <div className="inline-flex items-center bg-white/80 backdrop-blur-xl border border-black/[0.06] rounded-xl px-1 py-1 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]">
+              <button onClick={() => zoomBy(1.4)} aria-label="Zoom in"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b5f52] cursor-pointer transition-all duration-200 hover:text-[#1a1714] hover:bg-[#f5f3ef] active:scale-95">
+                <Icon d="M12 5v14M5 12h14" strokeWidth={1.75} />
+              </button>
+              <button onClick={() => zoomBy(1 / 1.4)} aria-label="Zoom out"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b5f52] cursor-pointer transition-all duration-200 hover:text-[#1a1714] hover:bg-[#f5f3ef] active:scale-95">
+                <Icon d="M5 12h14" strokeWidth={1.75} />
+              </button>
+              <div className="w-px h-4 bg-black/[0.06] mx-0.5" />
+              <button onClick={fitGraph} aria-label="Fit graph"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b5f52] cursor-pointer transition-all duration-200 hover:text-[#1a1714] hover:bg-[#f5f3ef] active:scale-95">
+                <Icon d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" strokeWidth={1.75} />
+              </button>
+              <button onClick={reheat} aria-label="Re-layout"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b5f52] cursor-pointer transition-all duration-200 hover:text-[#1a1714] hover:bg-[#f5f3ef] active:scale-95">
+                <Icon d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" strokeWidth={1.75} />
+              </button>
             </div>
           </div>
         )}
 
-        {/* ── Hint chip ── */}
+        {/* ── Hint ── */}
         {!loading && !displayError && (
-          <div className="desktop-only absolute bottom-6 right-6 z-10">
-            <div className="hero-enter hero-enter-delay-2 rounded-full bg-surface-card/85 border border-border-subtle backdrop-blur-xl px-4 py-2 text-[11px] text-text-muted">
-              Scroll to zoom · Drag to move · Click an entity to inspect
+          <div className="absolute bottom-4 right-4 z-10 hidden md:block">
+            <div className="rounded-lg bg-white/70 backdrop-blur-xl border border-black/[0.04] px-3 py-1.5 text-[10px] text-[#b5ad9e]">
+              Scroll to zoom · Drag to move · Click to inspect
             </div>
           </div>
         )}
@@ -632,91 +752,12 @@ export default function GraphPage() {
         <button
           onClick={() => setSidebarOpen(true)}
           aria-label="Open sidebar"
-          className="md:hidden absolute top-3 left-3 z-20 rounded-full border border-border-subtle bg-surface-card/85 backdrop-blur-xl w-10 h-10 flex items-center justify-center text-text-secondary cursor-pointer hover:bg-surface-muted transition-colors"
+          className="md:hidden absolute top-4 left-4 z-20 rounded-lg border border-black/[0.06] bg-white/80 backdrop-blur-xl w-9 h-9 flex items-center justify-center text-[#6b5f52] cursor-pointer hover:bg-white transition-colors"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
-
-        {/* ── Floating entity inspector ── */}
-        {selectedNode && (
-          <div
-            key={selectedNode.id}
-            className="hero-enter absolute inset-x-3 bottom-3 md:inset-x-auto md:left-6 md:bottom-6 md:w-[380px] z-20"
-          >
-            <div className="rounded-[1.75rem] bg-black/[0.03] p-[1.5px] ring-1 ring-black/5 shadow-[0_32px_90px_-40px_rgba(26,24,20,0.5)]">
-              <div className="rounded-[calc(1.75rem-1.5px)] bg-surface-card overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-                <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3.5 border-b border-border-subtle/60">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-3 h-3 rounded-full shrink-0" style={{ background: selectedColor, boxShadow: `0 0 0 4px ${withAlpha(selectedColor, 0.12)}` }} />
-                    <div className="min-w-0">
-                      <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted font-medium">Entity selected</div>
-                      <div className="font-serif text-[20px] font-normal text-text-primary leading-tight truncate mt-0.5">{selectedNode.label}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedId(null)}
-                    aria-label="Close inspector"
-                    className="w-9 h-9 rounded-full border border-border-subtle bg-surface-card flex items-center justify-center text-text-muted cursor-pointer transition-all duration-500 hover:border-emerald-500/40 hover:text-emerald-800 active:scale-90 shrink-0"
-                  >
-                    <Icon d="M18 6 6 18M6 6l12 12" />
-                  </button>
-                </div>
-
-                <div className="px-5 py-4 space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="rounded-full px-2.5 py-0.5 text-[9px] uppercase tracking-[0.16em] font-medium"
-                      style={{ background: withAlpha(selectedColor, 0.12), color: selectedColor }}>
-                      {selectedNode.type || 'unknown'}
-                    </span>
-                    <span className="text-xs text-text-muted tabular-nums">{neighborIds.size} connections</span>
-                  </div>
-
-                  {description && (
-                    <div>
-                      <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted font-medium">Description</div>
-                      <p className="text-text-secondary text-[13px] leading-relaxed mt-1.5">{description}</p>
-                    </div>
-                  )}
-
-                  {neighbors.length > 0 && (
-                    <div>
-                      <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted font-medium">Connected to</div>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {neighbors.slice(0, 8).map((n) => (
-                          <button
-                            key={n.id}
-                            onClick={() => focusNode(n)}
-                            className="group/chip flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-card px-3 py-1.5 text-[11px] text-text-secondary cursor-pointer transition-all duration-500 hover:border-emerald-500/40 hover:text-emerald-800 active:scale-95"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: n.color || ENTITY_COLORS.unknown }} />
-                            <span className="max-w-[140px] truncate">{n.label}</span>
-                          </button>
-                        ))}
-                        {neighborIds.size > neighbors.length && (
-                          <span className="flex items-center px-1 text-[11px] text-text-muted">+{neighborIds.size - neighbors.length} more</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-5 pb-5">
-                  <button
-                    onClick={() => focusNode(selectedNode)}
-                    className="group/btn w-full flex items-center justify-between gap-3 rounded-full bg-emerald-700 text-white pl-5 pr-2.5 py-2.5 text-[13px] font-medium cursor-pointer transition-all duration-500 hover:shadow-[0_12px_40px_rgba(13,140,74,0.28)] active:scale-[0.98]"
-                  >
-                    <span>Center on node</span>
-                    <span className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center transition-all duration-500 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 group-hover/btn:scale-105">
-                      <Icon d="M7 17 17 7M8 7h9v9" strokeWidth={2} className="text-white/90" />
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
