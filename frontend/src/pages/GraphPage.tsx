@@ -252,6 +252,24 @@ export default function GraphPage() {
     return 5 + normalized * 10
   }, [maxDegree])
 
+  /* Configure d3 forces via ref */
+  useEffect(() => {
+    const g = graphRef.current
+    if (!g) return
+    const d3 = g.d3Force
+    if (!d3) return
+    const charge = d3('charge')
+    if (charge && 'strength' in charge) (charge as any).strength(-600)
+    const linkForce = d3('link')
+    if (linkForce && 'distance' in linkForce) (linkForce as any).distance(160)
+    const center = d3('center')
+    if (center && 'strength' in center) (center as any).strength(0.01)
+    const collision = d3('collision')
+    if (collision && 'radius' in collision) {
+      (collision as any).radius((node: any) => nodeRadius(node) + 16)
+    }
+  }, [nodeRadius])
+
   /* ── Canvas painters ── */
 
   const paintNodeArea = useCallback((node: any, color: string, ctx: CanvasRenderingContext2D) => {
@@ -612,12 +630,6 @@ export default function GraphPage() {
             cooldownTime={3500}
             d3AlphaDecay={0.015}
             d3VelocityDecay={0.3}
-            d3Force={(d3: any) => {
-              d3.force('charge')?.strength(-600)
-              d3.force('link')?.distance(160)
-              d3.force('center')?.strength(0.01)
-              d3.force('collision')?.radius((node: any) => nodeRadius(node) + 16)
-            }}
             linkWidth={linkWidth}
             linkColor={linkColor}
             linkDirectionalParticles={linkDirectionalParticles}
