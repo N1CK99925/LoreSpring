@@ -1,32 +1,73 @@
-from langchain_groq import ChatGroq
-
-import time
-from groq import RateLimitError
+from langchain_litellm import ChatLiteLLMRouter
+from litellm.router import Router
 from app.config.settings import settings
 
 
-def get_llm(model: str, temp: float = 0.7, max_tokens: int = 3000):
-    return ChatGroq(
-        model=model,
+def get_llm(
+    model_name: str,
+    temp: float = 0.7,
+    max_tokens: int = 3000,
+):
+    return ChatLiteLLMRouter(
+        router=router,
+        model_name=model_name,
         temperature=temp,
         max_tokens=max_tokens,
-        api_key=settings.groq_api_key,
     )
 
 
-def select_model(task: str):
-    return {
-        "creative_writing": "llama-3.3-70b-versatile",
-        # analysis feeds with_structured_output (tool calling) — qwen/qwen3.6-27b
-        # fails "Failed to call a function" on Groq; llama-3.3-70b-versatile supports it
-        "analysis": "llama-3.3-70b-versatile",
-        "extraction": "llama-3.1-8b-instant",
-    }.get(task, "llama-3.1-8b-instant")
-
-
-def invoke_with_retry(llm, messages, max_retries=3):
-    for i in range(max_retries):
-        try:
-            return llm.invoke(messages)
-        except RateLimitError:
-            time.sleep(2**i)
+router = Router(
+    model_list=[
+        # ───── creative ─────
+        {
+            "model_name": "creative",
+            "litellm_params": {
+                "model": "groq/llama-3.3-70b-versatile",
+                "api_key": settings.groq_api_key_1,
+                "order": 1,
+            },
+        },
+        {
+            "model_name": "creative",
+            "litellm_params": {
+                "model": "openai/gpt-5-mini",
+                "api_key": settings.openai_api_key,
+                "order": 2,
+            },
+        },
+        # ───── analysis ─────
+        {
+            "model_name": "analysis",
+            "litellm_params": {
+                "model": "groq/llama-3.3-70b-versatile",
+                "api_key": settings.groq_api_key_1,
+                "order": 1,
+            },
+        },
+        {
+            "model_name": "analysis",
+            "litellm_params": {
+                "model": "openai/gpt-5-mini",
+                "api_key": settings.openai_api_key,
+                "order": 2,
+            },
+        },
+        # ───── extraction ─────
+        {
+            "model_name": "extraction",
+            "litellm_params": {
+                "model": "groq/llama-3.1-8b-instant",
+                "api_key": settings.groq_api_key_1,
+                "order": 1,
+            },
+        },
+        {
+            "model_name": "extraction",
+            "litellm_params": {
+                "model": "openai/gpt-5-mini",
+                "api_key": settings.openai_api_key,
+                "order": 2,
+            },
+        },
+    ]
+)
