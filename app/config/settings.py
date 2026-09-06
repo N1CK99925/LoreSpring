@@ -6,6 +6,9 @@ from urllib.parse import urlparse
 
 class Settings(BaseSettings):
     groq_api_key: str
+    mistral_api_key: str
+    gemini_api_key: str
+    nvidia_api_key: str
     # neo4j_uri: str = "bolt://localhost:7687"
     # neo4j_user: str = "neo4j"
     # neo4j_pass: str = "password"
