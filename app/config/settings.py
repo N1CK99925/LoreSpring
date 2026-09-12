@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     google_client_id: str
     google_client_secret: str
     frontend_url: str = "http://localhost:5173"
+    sentry_dsn: str | None = None
 
     class Config:
         env_file = ".env"

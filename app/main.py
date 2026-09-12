@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 from starlette.middleware.sessions import SessionMiddleware
-
+import sentry_sdk
 from app.config.settings import settings
 from app.api.routes import health, generate, review, auth, chapters, projects, graph_viz
 from app.api.routes import google_auth
@@ -62,6 +62,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+sentry_sdk.init(
+    dsn=settings.sentry_dsn,
+    send_default_pii=False,
+    enable_logs=True,
+    traces_sample_rate=0.1,
+    profile_session_sample_rate=0.1,
+    profile_lifecycle="trace",
 )
 
 app.include_router(health.router)
