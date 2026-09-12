@@ -1,10 +1,8 @@
 # Core LangGraph (0.2+ for PostgresSaver)
 langgraph>=0.2.0,<0.3.0
 
-
-# Groq LLM
-langchain-groq>=0.1.0
-
+langchain-litellm >= 0.7.1
+litellm >= 1.99.0
 # Checkpointer (separate package)
 langgraph-checkpoint-postgres>=0.1.0
 
@@ -14,25 +12,18 @@ neo4j>=5.25.0
 httpx>=0.27.0
 numpy>=1.26.0
 
-# FastAPI deployment
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 websockets>=13.1
 
-# Config/Env/Utils
 pydantic-settings>=2.5.0
 python-dotenv>=1.0.0
 
-# LangChain extras (messages, etc.)
 langchain-core>=0.3.0
 
-# Groq SDK (direct calls)
-groq>=0.5.0
 
-# Rate limiting
 slowapi>=0.1.10
 
-# Testing/Dev (optional, install with -D)
 # pytest>=8.3.0
 # pytest-asyncio>=0.24.0
 
