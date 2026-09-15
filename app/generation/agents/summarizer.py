@@ -1,4 +1,4 @@
-from app.llm.client import get_llm, select_model
+from app.llm.client import get_llm
 from app.generation.state import NarrativeState
 from app.domain.summarizer import SummarizerResult
 from app.generation.agents.utils import parse_json_content
@@ -65,7 +65,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     character_updates = {}
 
     try:
-        llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
+        llm = get_llm("analysis", temp=0.0, max_tokens=1500)
         structured_llm = llm.with_structured_output(SummarizerResult)
         result: SummarizerResult = await structured_llm.ainvoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
@@ -156,7 +156,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
         Extract from the chapter draft above. Return only the JSON object. No markdown. No extra text."""
 
         try:
-            llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1500)
+            llm_raw = get_llm("analysis", temp=0.0, max_tokens=1500)
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
@@ -164,9 +164,7 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
                 ]
             )
             content = (
-                raw_response.content
-                if isinstance(raw_response.content, str)
-                else ""
+                raw_response.content if isinstance(raw_response.content, str) else ""
             )
             parsed = parse_json_content(content)
 

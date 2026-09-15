@@ -1,4 +1,4 @@
-from app.llm.client import get_llm, select_model
+from app.llm.client import get_llm
 from app.generation.state import NarrativeState
 from app.domain.continuity import ContinuityResult
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -81,7 +81,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
     issues = []
 
     try:
-        llm = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
+        llm = get_llm("analysis", temp=0.0, max_tokens=1200)
         structured_llm = llm.with_structured_output(ContinuityResult)
 
         result: ContinuityResult = await structured_llm.ainvoke(
@@ -152,7 +152,7 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
         Now analyze the draft. Return only the JSON object. No markdown. No extra text."""
 
         try:
-            llm_raw = get_llm(select_model("analysis"), temp=0.0, max_tokens=1200)
+            llm_raw = get_llm("analysis", temp=0.0, max_tokens=1200)
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),

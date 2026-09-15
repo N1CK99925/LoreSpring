@@ -1,4 +1,4 @@
-from app.llm.client import get_llm, select_model
+from app.llm.client import get_llm
 from app.generation.state import NarrativeState
 from app.domain.revision import RevisionResult
 from app.generation.agents.utils import parse_json_content
@@ -83,7 +83,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     quality_feedback = []
 
     try:
-        llm = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
+        llm = get_llm("analysis", temp=0.2, max_tokens=1000)
         structured_llm = llm.with_structured_output(RevisionResult)
         result: RevisionResult = await structured_llm.ainvoke(
             [SystemMessage(content=system), HumanMessage(content=human)]
@@ -190,7 +190,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
         Evaluate the chapter. Return only the JSON object. No markdown. No extra text."""
 
         try:
-            llm_raw = get_llm(select_model("analysis"), temp=0.2, max_tokens=1000)
+            llm_raw = get_llm("analysis", temp=0.2, max_tokens=1000)
             raw_response = await llm_raw.ainvoke(
                 [
                     SystemMessage(content=system_fallback),
@@ -199,9 +199,7 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
             )
 
             content = (
-                raw_response.content
-                if isinstance(raw_response.content, str)
-                else ""
+                raw_response.content if isinstance(raw_response.content, str) else ""
             )
             parsed = parse_json_content(content)
 

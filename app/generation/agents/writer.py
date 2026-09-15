@@ -1,10 +1,10 @@
 from app.generation.agents.utils import build_revision_plan
-from app.llm.client import get_llm, select_model
-from app.generation.state import NarrativeState
+from app.llm.client import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.memory.rag import query_lore
-
-# TODO: Add sytle prompt so that user can style prompt based on writing sytle
+from app.generation.state import (
+    NarrativeState,
+)  # TODO: Add sytle prompt so that user can style prompt based on writing sytle
 
 from langsmith import traceable
 
@@ -117,7 +117,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             Write Chapter {state["chapter_number"]} now. Begin directly with the narrative.
         """
 
-        llm = get_llm(select_model("creative_writing"), temp=temp, max_tokens=2000)
+        llm = get_llm("creative_writing", temp=temp, max_tokens=2000)
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         response = await llm.ainvoke(messages)
 
@@ -199,7 +199,7 @@ async def writer_agent_node(state: NarrativeState) -> NarrativeState:
             Output ONLY the revised chapter text.
             """
 
-        llm = get_llm(select_model("creative_writing"), temp=temp, max_tokens=2000)
+        llm = get_llm("creative_writing", temp=temp, max_tokens=2000)
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         response = await llm.ainvoke(messages)
 

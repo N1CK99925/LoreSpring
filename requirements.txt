@@ -1,11 +1,10 @@
 # Core LangGraph (0.2+ for PostgresSaver)
-langgraph>=0.2.0,<0.3.0
 
-langchain-litellm >= 0.7.1
 litellm >= 1.99.0
 # Checkpointer (separate package)
 langgraph-checkpoint-postgres>=0.1.0
 
+sentry-sdk>=1.28.0
 # Databases
 neo4j>=5.25.0
 
@@ -19,8 +18,9 @@ websockets>=13.1
 pydantic-settings>=2.5.0
 python-dotenv>=1.0.0
 
-langchain-core>=0.3.0
-
+langgraph>=1.0,<2.0
+langchain-core>=1.6,<2.0
+langchain-litellm>=0.7.1
 
 slowapi>=0.1.10
 
