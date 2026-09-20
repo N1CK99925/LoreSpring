@@ -1,4 +1,4 @@
-from app.llm.client import get_llm
+from app.llm.client import get_llm, invoke_with_timeout
 from app.generation.state import NarrativeState
 from app.domain.revision import RevisionResult
 from app.generation.agents.utils import parse_json_content
@@ -85,8 +85,11 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
     try:
         llm = get_llm("analysis", temp=0.2, max_tokens=1000)
         structured_llm = llm.with_structured_output(RevisionResult)
-        result: RevisionResult = await structured_llm.ainvoke(
-            [SystemMessage(content=system), HumanMessage(content=human)]
+        result: RevisionResult = await invoke_with_timeout(
+            structured_llm.ainvoke(
+                [SystemMessage(content=system), HumanMessage(content=human)]
+            ),
+            label="revision structured",
         )
 
         metrics_dict = result.quality_metrics.model_dump()
@@ -191,11 +194,14 @@ async def revision_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm("analysis", temp=0.2, max_tokens=1000)
-            raw_response = await llm_raw.ainvoke(
-                [
-                    SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt),
-                ]
+            raw_response = await invoke_with_timeout(
+                llm_raw.ainvoke(
+                    [
+                        SystemMessage(content=system_fallback),
+                        HumanMessage(content=fallback_prompt),
+                    ]
+                ),
+                label="revision fallback",
             )
 
             content = (

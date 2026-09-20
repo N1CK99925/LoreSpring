@@ -9,6 +9,12 @@ from app.config.settings import settings
 from app.memory.embedding import embed_func
 from lightrag.kg import *
 
+from app.memory.ontology import load_entity_ontology, render_entity_guidance
+
+ontology = load_entity_ontology()
+
+ENTITY_GUIDANCE = render_entity_guidance(ontology)
+
 
 async def groq_llm_func(
     prompt, system_prompt=None, history_messages=None, **kwargs
@@ -47,6 +53,8 @@ async def initialize_rag(user_id: int, project_id: str) -> LightRAG:
         doc_status_storage="PGDocStatusStorage",
         kv_storage="PGKVStorage",
         workspace=f"{user_id}:{project_id}",
+        addon_params={"language": "English", "entity_guidance": ENTITY_GUIDANCE},
+        entity_extraction_use_json=True,
     )
 
     await rag.initialize_storages()

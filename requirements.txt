@@ -57,4 +57,4 @@ networkx>=3.1
 json-repair>=0.4.0
 langsmith>=0.1.0
 
-
+pyyaml

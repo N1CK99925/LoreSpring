@@ -1,4 +1,4 @@
-from app.llm.client import get_llm
+from app.llm.client import get_llm, invoke_with_timeout
 from app.generation.state import NarrativeState
 from app.domain.continuity import ContinuityResult
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -84,8 +84,11 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
         llm = get_llm("analysis", temp=0.0, max_tokens=1200)
         structured_llm = llm.with_structured_output(ContinuityResult)
 
-        result: ContinuityResult = await structured_llm.ainvoke(
-            [SystemMessage(content=system), HumanMessage(content=human)]
+        result: ContinuityResult = await invoke_with_timeout(
+            structured_llm.ainvoke(
+                [SystemMessage(content=system), HumanMessage(content=human)]
+            ),
+            label="continuity structured",
         )
 
         issues = [i.model_dump() for i in result.continuity_issues]
@@ -153,11 +156,14 @@ async def continue_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm("analysis", temp=0.0, max_tokens=1200)
-            raw_response = await llm_raw.ainvoke(
-                [
-                    SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt),
-                ]
+            raw_response = await invoke_with_timeout(
+                llm_raw.ainvoke(
+                    [
+                        SystemMessage(content=system_fallback),
+                        HumanMessage(content=fallback_prompt),
+                    ]
+                ),
+                label="continuity fallback",
             )
 
             repaired = repair_json(raw_response.content)

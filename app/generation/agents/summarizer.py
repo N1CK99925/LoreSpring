@@ -1,4 +1,4 @@
-from app.llm.client import get_llm
+from app.llm.client import get_llm, invoke_with_timeout
 from app.generation.state import NarrativeState
 from app.domain.summarizer import SummarizerResult
 from app.generation.agents.utils import parse_json_content
@@ -67,8 +67,11 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
     try:
         llm = get_llm("analysis", temp=0.0, max_tokens=1500)
         structured_llm = llm.with_structured_output(SummarizerResult)
-        result: SummarizerResult = await structured_llm.ainvoke(
-            [SystemMessage(content=system), HumanMessage(content=human)]
+        result: SummarizerResult = await invoke_with_timeout(
+            structured_llm.ainvoke(
+                [SystemMessage(content=system), HumanMessage(content=human)]
+            ),
+            label="summarizer structured",
         )
         chapter_summary = result.chapter_summary
         key_events = result.key_events
@@ -157,11 +160,14 @@ async def summarizer_agent_node(state: NarrativeState) -> NarrativeState:
 
         try:
             llm_raw = get_llm("analysis", temp=0.0, max_tokens=1500)
-            raw_response = await llm_raw.ainvoke(
-                [
-                    SystemMessage(content=system_fallback),
-                    HumanMessage(content=fallback_prompt),
-                ]
+            raw_response = await invoke_with_timeout(
+                llm_raw.ainvoke(
+                    [
+                        SystemMessage(content=system_fallback),
+                        HumanMessage(content=fallback_prompt),
+                    ]
+                ),
+                label="summarizer fallback",
             )
             content = (
                 raw_response.content if isinstance(raw_response.content, str) else ""

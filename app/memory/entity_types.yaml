@@ -1,0 +1,143 @@
+version: 1
+
+entity_types:
+  Character:
+    description: >
+      Named or distinctly described persons or creatures with agency.
+      The entity must have a proper name or a capitalized epithet with
+      a persistent narrative role.
+    examples:
+      - Elara
+      - the Ashen Knight
+    exclusions:
+      - generic people
+      - unnamed soldiers
+      - unnamed villagers
+
+  Faction:
+    description: >
+      Named groups with collective agency.
+    examples:
+      - the Ember Pact
+      - House Varnholt
+    exclusions:
+      - generic groups
+      - people
+      - soldiers
+      - villagers
+
+  Location:
+    description: >
+      Named or uniquely identifiable places that the plot can return to.
+      Generic environmental locations do not qualify unless named or
+      uniquely identifiable.
+    examples:
+      - Whispering Citadel
+      - the northern pass
+    exclusions:
+      - generic forest
+      - generic cave
+      - generic mountain
+      - generic room
+
+  Artifact:
+    description: >
+      Distinctive objects with plot relevance or unique properties.
+      Mundane objects do not qualify.
+    examples:
+      - Aether Lens
+      - the Obsidian Crown
+    exclusions:
+      - generic sword
+      - generic book
+      - generic door
+      - mundane objects
+
+  Lore:
+    description: >
+      Named magic systems, prophecies, historical events, world rules,
+      or other named concepts that have persistent significance within
+      the fictional world.
+    examples:
+      - the Sundering
+      - Windbinding
+    exclusions:
+      - generic concepts
+      - ordinary events
+      - generic abilities
+
+  Creature:
+    description: >
+      Named species or individual non-human beings with a narrative role.
+      Generic animals do not qualify unless they are named or uniquely
+      identifiable.
+    examples:
+      - Drakewolf
+      - the Pale Wyrm
+    exclusions:
+      - generic wolf
+      - generic horse
+      - generic bird
+      - ordinary animals
+
+  Other:
+    description: >
+      A plot-relevant named or uniquely identifiable entity that clearly
+      does not fit any other category.
+    examples:
+      - a named organization-like construct that is not a faction
+    exclusions:
+      - generic nouns
+      - abstract concepts
+      - ambient phenomena
+      - mundane objects
+
+exclusions:
+  generic_ambient:
+    - air
+    - water
+    - light
+    - darkness
+    - wind
+    - dust
+    - smoke
+    - fire
+    - stone
+    - ground
+    - sky
+
+  generic_body_parts:
+    - hand
+    - eye
+    - face
+    - arm
+    - leg
+    - blood
+
+  abstract:
+    - fear
+    - love
+    - time
+    - silence
+    - anger
+    - sadness
+
+  generic_collectives:
+    - people
+    - soldiers
+    - villagers
+    - guards
+    - army
+
+normalization:
+  casing: preserve
+  deduplicate_case_variants: true
+
+prioritization:
+  - Character
+  - Location
+  - Faction
+  - Lore
+  - Artifact
+  - Creature
+  - Other
