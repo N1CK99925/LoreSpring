@@ -32,7 +32,7 @@ lightrag-hku[api]
 
 asyncpg
 
-sqlalchemy
+sqlalchemy[asyncio]
 
 alembic
 
