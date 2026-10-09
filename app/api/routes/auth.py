@@ -10,6 +10,7 @@ from app.api.deps import get_current_user
 from app.config.settings import settings
 from app.core.limiter import limiter, user_id_key
 from app.config.rate_limits import RateLimits
+from pydantic import BaseModel
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -44,9 +45,6 @@ async def register(
     return UserResponse(
         id=new_user.id, username=new_user.username, email=new_user.email
     )
-
-
-from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):

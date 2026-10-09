@@ -24,8 +24,8 @@ langchain-litellm>=0.7.1
 
 slowapi>=0.1.10
 
-# pytest>=8.3.0
-# pytest-asyncio>=0.24.0
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
 
 lightrag-hku[api]
 

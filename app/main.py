@@ -57,13 +57,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://lorespring.vercel.app",
-        "http://localhost:5173",  # adjust to your actual local Vite dev port
+        "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-sentry_sdk.init(
+_ = sentry_sdk.init(
     dsn=settings.sentry_dsn,
     send_default_pii=False,
     enable_logs=True,
